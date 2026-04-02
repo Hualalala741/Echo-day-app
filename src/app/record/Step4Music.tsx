@@ -105,7 +105,9 @@ export default function Step4Music({ draft, generated, onComplete }: Props) {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">Step 4: Your Song</h1>
-        <p className="text-slate-500 text-lg">Echo picked music that matches your day's mood.</p>
+        <p className="text-slate-500 text-lg">
+          Echo picked music that matches your day&apos;s mood.
+        </p>
       </div>
 
       <audio ref={audioRef} onEnded={() => setIsPlaying(false)} className="hidden" />
@@ -122,7 +124,9 @@ export default function Step4Music({ draft, generated, onComplete }: Props) {
           <>
             {/* Reason */}
             {generated.musicReason && (
-              <p className="text-sm text-slate-500 italic mb-4 px-1">"{generated.musicReason}"</p>
+              <p className="text-sm text-slate-500 italic mb-4 px-1">
+                {`"${generated.musicReason}"`}
+              </p>
             )}
 
             {/* Track card */}

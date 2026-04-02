@@ -6,6 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
 const eslintConfig = [
+  { ignores: ["src/generated/**"] },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
 

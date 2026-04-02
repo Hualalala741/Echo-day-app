@@ -2,15 +2,22 @@ import yaml from 'js-yaml';
 import fs from 'fs';
 import path from 'path';
 
-let _config = null;
+type LanguageVars = Record<string, string>;
 
+type PromptsYaml = {
+  language_settings: Record<string, LanguageVars>;
+  conversation: { system_prompt: string; [key: string]: unknown };
+  diary_generation: { system_prompt: string; [key: string]: unknown };
+  stt: Record<string, unknown>;
+};
 
+let _config: PromptsYaml | null = null;
 
-export function getRawConfig() {
+export function getRawConfig(): PromptsYaml {
   if (!_config) {
     const filePath = path.join(process.cwd(), "prompts.yml");
     const file = fs.readFileSync(filePath, "utf8");
-    _config = yaml.load(file);
+    _config = yaml.load(file) as PromptsYaml;
   }
   return _config;
 }
