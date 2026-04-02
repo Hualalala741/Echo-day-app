@@ -9,7 +9,7 @@ interface SpotifyTrack {
   name: string;
   artist: string;
   albumArt: string;
-  previewUrl: string | null;
+  previewUrl: string | null; // 大部分地区已不可用，保留字段做兼容
 }
 
 interface Props {
@@ -19,14 +19,15 @@ interface Props {
 }
 
 export default function Step4Music({ draft, generated, onComplete }: Props) {
-  const [tracks, setTracks] = useState<SpotifyTrack[]>([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [tracks, setTracks] = useState<SpotifyTrack[]>([]); // 搜索到的歌曲列表
+  const [currentIdx, setCurrentIdx] = useState(0); // 当前选中的歌曲索引
+  const [isPlaying, setIsPlaying] = useState(false); //
+  const [loading, setLoading] = useState(true); //搜索中的加载状态
+  const [saving, setSaving] = useState(false); // 点确认后的保存状态
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // -- 初始化：组件挂载时用关键词搜歌 --
   useEffect(() => {
     searchTracks(generated.musicSearchQuery);
   }, []);
@@ -45,8 +46,9 @@ export default function Step4Music({ draft, generated, onComplete }: Props) {
       const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error("Music search failed");
       const data: SpotifyTrack[] = await res.json();
+      console.log('searchTracks data', data);
       setTracks(data);
-      setCurrentIdx(0);
+      setCurrentIdx(0); // 重置到第一首
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to find music");
     } finally {
@@ -150,6 +152,17 @@ export default function Step4Music({ draft, generated, onComplete }: Props) {
                   {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
                 </button>
               </div>
+            </div>
+            {/* spotify Embed播放器
+              用iframe嵌入spotify 官方播放器，不需要用户登录
+             */}
+            <div>
+              <iframe
+                src={`https://open.spotify.com/embed/track/${track.id}`}
+                height='152'
+                width='100%'
+                allow="encrypted-media"
+                />
             </div>
 
             {/* Actions */}

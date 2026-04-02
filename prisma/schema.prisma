@@ -84,8 +84,10 @@ model DiaryEntry {
   userId           String
   date             DateTime        @db.Date
   status           EntryStatus     @default(DRAFT)
+  currentStep      Int             @default(0)
   photoUrl         String
   photoKey         String
+  conversationMessages Json?
   transcript       String?
   diaryText        String?
   valence          Float?

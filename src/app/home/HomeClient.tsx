@@ -3,6 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Plus } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CalendarView from "@/components/home/CalendarView";
 import TimelineView from "@/components/home/TimelineView";
@@ -40,6 +51,7 @@ const PRIMARY = "#0f58bd";
 export default function HomeClient({ entries, year, month, user, todayEntry }: Props) {
   const router = useRouter();
   const [view, setView] = useState<View>("calendar");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   function navigateMonth(delta: number) {
     let newMonth = month + delta;
@@ -50,20 +62,35 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
   }
 
   function handleNewEntry() {
-    if (!todayEntry) {
+    if (!todayEntry) { // 没有今天的日记，则创建新的日记
       router.push("/record");
-    } else if (todayEntry.status === "DRAFT") {
+    } else if (todayEntry.status === "DRAFT") { // 有今天的日记，但状态为草稿，则提示继续编辑（这里应该要询问，是否继续编辑））
+      // setShowConfirm(true);
       router.push("/record?resume=true");
-    } else {
-      router.push(`/diary/${todayEntry.id}`);
+    } else { // 有今天的日记，则提示重写
+      setShowConfirm(true);
     }
+  }
+  async function handleReplace() {
+    if(todayEntry?.id){
+      try{
+        const res = await fetch(`/api/diary/${todayEntry.id}`,{method:"DELETE"})
+        if(!res.ok){
+          throw new Error(`删除失败：${res.status}`)
+        }
+      }catch(error){
+        console.error(error);
+        alert((error as Error).message);
+      }
+    }
+    router.push("/record");
   }
 
   const newEntryLabel = !todayEntry
-    ? "New Entry"
+    ? "新建日记"
     : todayEntry.status === "DRAFT"
-    ? "Resume Draft"
-    : "View Today";
+    ? "继续编辑草稿"
+    : "重新上传";
 
   const firstName = user.name?.split(" ")[0] ?? "there";
   const initials = user.name
@@ -167,7 +194,7 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
           </button>
         </div>
       )}
-
+    
       {/* Content */}
       <main className="px-6 md:px-10 lg:px-20 pb-16">
         {view === "calendar" ? (
@@ -176,6 +203,23 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
           <TimelineView entries={entries} />
         )}
       </main>
+
+      
+      <AlertDialog open={showConfirm}>
+        <AlertDialogContent>
+        <AlertDialogHeader>
+        <AlertDialogTitle>提示</AlertDialogTitle>
+        <AlertDialogDescription>
+        重新上传会直接删除今天已经写好的日记。确定要继续吗？
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel onClick={() => setShowConfirm(false)}>取消</AlertDialogCancel>
+        <AlertDialogAction onClick={handleReplace} className='bg-red-500 hover:bg-red-600'>确定</AlertDialogAction>
+      </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
     </div>
   );
 }

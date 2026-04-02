@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { openai } from "@/lib/openai";
-
-const SYSTEM_PROMPT = `You are Echo, a warm and curious AI journaling companion.
-Your role is to gently guide the user to reflect on their day through natural conversation.
-- Ask about what happened and how they felt
-- Be empathetic, non-judgmental, and never give advice
-- Ask one follow-up question at a time
-- Keep responses concise (2-3 sentences max)
-- If this is the first message, greet them warmly and ask about their photo/day`;
+import { getConversationConfig } from "@/lib/prompts";
+import type { AiLang } from "@/app/record/RecordWizard";
+import type OpenAI from "openai";
 
 interface Message {
   role: "user" | "assistant";
@@ -16,43 +11,78 @@ interface Message {
 }
 
 export async function POST(req: NextRequest) {
+  
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id){
+    // 流式响应需要用原生 Response 不能用 NextResponse.json()
+    return new Response("Unauthorized", { status: 401 });
+  }
 
-  const { messages, photoUrl, isFirst } = await req.json() as {
+  const { messages, photoUrl, isFirst, aiLang } = await req.json() as {
     messages: Message[];
     photoUrl: string;
     isFirst: boolean;
+    aiLang: AiLang;
   };
 
+  // 构建prompt
   const apiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: getConversationConfig(aiLang).system_prompt },
   ];
 
-  // On first message, include the photo for vision
-  if (isFirst && photoUrl) {
+  // 每个信息都加上图片
+  if (photoUrl) {
     apiMessages.push({
       role: "user",
       content: [
         { type: "image_url", image_url: { url: photoUrl, detail: "low" } },
-        { type: "text", text: "This is my photo for today. Please start our conversation." },
+        { type: "text", text: "This is my photo for today. " },
       ],
     });
-  } else {
-    for (const m of messages) {
-      apiMessages.push({ role: m.role, content: m.content });
-    }
   }
-
-  const completion = await openai.chat.completions.create({
+  for (const m of messages) {
+    apiMessages.push({ role: m.role, content: m.content });
+  }
+  console.log('apiMessages', JSON.stringify(apiMessages, null, 2));
+  
+  // 调用模型
+  // 流式：openai 边生成边返回，每生成几个字就发一个 chunk 过来
+  const stream = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: apiMessages,
-    max_tokens: 150,
+    max_tokens: 400,
+    stream: true,
   });
-
-  const reply = completion.choices[0].message.content ?? "";
-  return NextResponse.json({ reply });
+  // ── 把 OpenAI 的 stream 转成浏览器能读的 ReadableStream ──
+  //openai SDK 返回的 stream 是 Node.js 的异步迭代器，格式不同
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream({
+    async start(controller){
+      // controller 控制这个流：enqueue 往里面塞数据，close关系流
+      // for await... of 逐个读取 chunk
+      for await (const chunk of stream){
+        // 每个 chunk 的结构：chunk.choices[0].delta.content
+        // delta.content 就是这一小段新生成的文字，比如 "你"、"好"、"！"
+        console.log('chunk', chunk);
+        const text = chunk.choices[0]?.delta?.content ?? "";
+        if(text){
+          // 用SSE格式发给浏览器
+          // SSE 格式：data: {type: "text", chunk: "..."}\n\n
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({type: "text", chunk: text})}\n\n`));
+        }
+      }
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close(); // 流结束
+    }
+  })
+  // 返回流
+  return new Response(readable,{
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache", // 不缓存，每次都要新数据
+      Connection: "keep-alive", // 保持连接，不断开
+    }
+  }
+  );
 }
 
-// fix import type
-import type OpenAI from "openai";

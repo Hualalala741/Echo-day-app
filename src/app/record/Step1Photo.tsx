@@ -1,27 +1,38 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ImagePlus, Upload } from "lucide-react";
+import { ImagePlus, X, Upload } from "lucide-react";
 import type { Draft } from "./RecordWizard";
 
 interface Props {
   userId: string;
+  existingPhotoUrl: string | null;
+  /** 今日草稿 id；用已有照片继续时必须带上，否则 save-draft 会缺 draftId */
+  existingDraftId: string | null;
   onComplete: (draft: Draft) => void;
 }
 
-export default function Step1Photo({ onComplete }: Props) {
-  const [preview, setPreview] = useState<string | null>(null);
+export default function Step1Photo({ existingPhotoUrl, existingDraftId, onComplete }: Props) {
+
+  const [preview, setPreview] = useState<string | null>(existingPhotoUrl ?? null);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const needsUpload = file !== null;
+
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    if (!f) return;
+    if(!f) return;
+    if(preview&&!existingPhotoUrl) { URL.revokeObjectURL(preview); }
     setFile(f);
     setPreview(URL.createObjectURL(f));
     setError(null);
+    if(inputRef.current) {
+      inputRef.current.value = "";
+    }
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -32,8 +43,25 @@ export default function Step1Photo({ onComplete }: Props) {
     setPreview(URL.createObjectURL(f));
     setError(null);
   }
+  
+  function clearPhoto() {
+    if(preview && preview!==existingPhotoUrl) { URL.revokeObjectURL(preview); }
+    setPreview(null);
+    setFile(null);
+    setError(null);
+  }
+
 
   async function handleUpload() {
+    // 如果没选新文件，说明用的是已有图片，直接跳过上传
+    if (!needsUpload && existingPhotoUrl) {
+      if (!existingDraftId) {
+        setError("Missing draft id; please re-upload the photo.");
+        return;
+      }
+      onComplete({ id: existingDraftId, photoUrl: existingPhotoUrl });
+      return;
+    }
     if (!file) return;
     setUploading(true);
     setError(null);
@@ -43,7 +71,7 @@ export default function Step1Photo({ onComplete }: Props) {
       const res = await fetch("/api/record/upload-photo", { method: "POST", body: form });
       if (!res.ok) throw new Error(await res.text());
       const data: Draft = await res.json();
-      onComplete(data);
+      onComplete({ id: data.id, photoUrl: data.photoUrl });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
@@ -61,6 +89,7 @@ export default function Step1Photo({ onComplete }: Props) {
       <div className="max-w-lg">
         {/* Drop zone / preview */}
         <div
+        // 没有图片时，点击可以上传
           onClick={() => !preview && inputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
@@ -70,7 +99,21 @@ export default function Step1Photo({ onComplete }: Props) {
           style={{ minHeight: 300 }}
         >
           {preview ? (
-            <img src={preview} alt="Preview" className="w-full object-cover rounded-xl" style={{ maxHeight: 400 }} />
+            <div className="relative">
+              <div className = "flex items-center justify-center bg-slate-50 rounded-xl" style={{minHeight: 200, maxHeight: 400 }}>
+                <img 
+                src={preview} 
+                alt="Preview" 
+                className="max-w-full max-h-full object-contain rounded-xl" 
+                style={{ maxHeight: 400 }}
+                />
+              </div>
+              <button
+                onClick={(e)=>{e.stopPropagation();clearPhoto()}}
+                className="absolute top-3 right-3 bg-white/80 rounded-lg p-1 text-[#0f58bd] hover:bg-slate-300 transition-color">
+                  <X className="w-4 h-4" />
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 py-20 px-8 text-center">
               <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
@@ -88,14 +131,7 @@ export default function Step1Photo({ onComplete }: Props) {
 
         {/* Actions */}
         <div className="flex gap-3 mt-4">
-          {preview && (
-            <button
-              onClick={() => { setPreview(null); setFile(null); }}
-              className="flex-1 h-11 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
-            >
-              Change Photo
-            </button>
-          )}
+    
           <button
             onClick={preview ? handleUpload : () => inputRef.current?.click()}
             disabled={uploading}

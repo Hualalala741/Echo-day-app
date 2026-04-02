@@ -1,19 +1,12 @@
+import type OpenAI from "openai";
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { openai } from "@/lib/openai";
 import { prisma } from "@/lib/prisma";
 import { getMood } from "@/lib/mood-map";
-
-const SYSTEM = `You are a poetic diary writer. Based on the conversation transcript and photo context, generate a diary entry and emotional analysis.
-
-Return ONLY valid JSON with this exact shape:
-{
-  "diaryText": "First-person diary entry, 150-220 characters in Chinese, warm and personal tone",
-  "valence": 0.75,
-  "arousal": 0.4,
-  "musicSearchQuery": "Spotify search string that matches the mood (artist + genre or vibe)",
-  "musicReason": "One sentence explaining why this music fits today's mood"
-}`;
+import { getDiaryConfig } from "@/lib/prompts";
+import { resolveTranscriptFromBody } from "@/lib/conversation-transcript";
+import type { AiLang } from "@/app/record/RecordWizard";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -21,7 +14,17 @@ export async function POST(req: NextRequest) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const { draftId, transcript } = await req.json() as { draftId: string; transcript: string };
+  const body = (await req.json()) as {
+    draftId: string;
+    transcript?: string;
+    conversationMessages?: unknown;
+    aiLang: AiLang;
+  };
+  const { draftId, aiLang } = body;
+  const transcript = resolveTranscriptFromBody(body);
+
+  if (!draftId) return new Response("Missing draftId", { status: 400 });
+  if (!transcript.trim()) return new Response("Missing conversation", { status: 400 });
 
   const draft = await prisma.diaryEntry.findFirst({
     where: { id: draftId, userId: session.user.id },
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest) {
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
-      { role: "system", content: SYSTEM },
+      { role: "system", content: getDiaryConfig(aiLang).system_prompt },
       { role: "user", content: userContent },
     ],
     response_format: { type: "json_object" },
@@ -56,10 +59,8 @@ export async function POST(req: NextRequest) {
     musicReason: string;
   };
 
-  // Map valence/arousal → mood
   const mood = getMood(parsed.valence, parsed.arousal);
 
-  // Persist transcript + draft diary data
   await prisma.diaryEntry.update({
     where: { id: draftId },
     data: {
@@ -76,20 +77,17 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // SSE: stream diary text character by character, then send metadata
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       const send = (data: object) =>
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
 
-      // Stream diary text
       for (const char of parsed.diaryText) {
         send({ type: "text", chunk: char });
         await new Promise((r) => setTimeout(r, 18));
       }
 
-      // Send metadata
       send({
         type: "meta",
         content: {
@@ -114,5 +112,3 @@ export async function POST(req: NextRequest) {
     },
   });
 }
-
-import type OpenAI from "openai";

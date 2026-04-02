@@ -1,17 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { X, CheckCircle, Mic } from "lucide-react";
 import Step1Photo from "./Step1Photo";
-import Step2Voice from "./Step2Voice";
 import Step3Review from "./Step3Review";
-import Step4Music from "./Step4Music";
+import Step2Voice2 from "./Step2Voice2";
+
+export interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
 
 export type Draft = {
   id: string;
   photoUrl: string;
-  transcript?: string | null;
+  conversationMessages?: Message[] | null;
+  diaryText?: string | null;
+  valence?: number | null;
+  arousal?: number | null;
+  musicSearchQuery?: string | null;
+  musicReason?: string | null;
 };
 
 export type GeneratedContent = {
@@ -21,27 +30,144 @@ export type GeneratedContent = {
   musicSearchQuery: string;
   musicReason: string;
 };
+export type AiLang = "zh-CN" | "en";
+
+function normalizeConversationMessages(raw: unknown): Message[] | null {
+  if (raw == null) return null;
+  if (!Array.isArray(raw)) return null;
+  const out: Message[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== "object") continue;
+    const o = x as Record<string, unknown>;
+    if ((o.role === "user" || o.role === "assistant") && typeof o.content === "string") {
+      out.push({ role: o.role, content: o.content });
+    }
+  }
+  return out.length > 0 ? out : null;
+}
 
 interface Props {
   userId: string;
-  existingDraft: { id: string; status: string; photoUrl: string; transcript: string | null } | null;
+  existingDraft: {
+    id: string;
+    status: string;
+    photoUrl: string;
+    currentStep: number;
+    conversationMessages: unknown;
+    diaryText: string | null;
+    valence: number | null;
+    arousal: number | null;
+    musicSearchQuery: string | null;
+    musicReason: string | null;
+  } | null;
 }
 
-const STEPS = ["Photo Upload", "AI Voice Conversation", "Review", "Finalize"];
+const STEPS = ["Photo Upload", "AI Voice Conversation", "Review & Music"];
 
-export default function RecordWizard({ userId, existingDraft }: Props) {
+export default function RecordWizard({ userId, existingDraft}: Props) {
   const router = useRouter();
+  useEffect(()=>{
+    console.log("existingDraft", existingDraft);
+  },[]);
 
-  const initialStep = existingDraft?.photoUrl ? 1 : 0;
+  const initialStep = Math.min(existingDraft?.currentStep ?? 0, 2);
   const [step, setStep] = useState(initialStep);
+  const [aiLang, setAiLang] = useState<AiLang>("zh-CN");
   const [draft, setDraft] = useState<Draft | null>(
-    existingDraft ? { id: existingDraft.id, photoUrl: existingDraft.photoUrl, transcript: existingDraft.transcript } : null
+    existingDraft
+      ? {
+          id: existingDraft.id,
+          photoUrl: existingDraft.photoUrl,
+          conversationMessages: normalizeConversationMessages(existingDraft.conversationMessages),
+          diaryText: existingDraft.diaryText,
+          valence: existingDraft.valence,
+          arousal: existingDraft.arousal,
+          musicSearchQuery: existingDraft.musicSearchQuery,
+          musicReason: existingDraft.musicReason,
+        }
+      : null
   );
-  const [generated, setGenerated] = useState<GeneratedContent | null>(null);
-
   function handleClose() {
     router.push("/home");
   }
+  const saveDraft = useCallback(
+    async (data: {
+      draftId: string;
+      currentStep?: number;
+      conversationMessages?: Message[] | null;
+      diaryText?: string | null;
+      valence?: number | null;
+      arousal?: number | null;
+      musicSearchQuery?: string | null;
+      musicReason?: string | null;
+    }) => {
+      const payload: Record<string, unknown> = { draftId: data.draftId };
+      if (data.currentStep !== undefined) payload.currentStep = data.currentStep;
+      if (data.conversationMessages !== undefined) payload.conversationMessages = data.conversationMessages;
+      if (data.diaryText !== undefined) payload.diaryText = data.diaryText;
+      if (data.valence !== undefined) payload.valence = data.valence;
+      if (data.arousal !== undefined) payload.arousal = data.arousal;
+      if (data.musicSearchQuery !== undefined) payload.musicSearchQuery = data.musicSearchQuery;
+      if (data.musicReason !== undefined) payload.musicReason = data.musicReason;
+      const res = await fetch("/api/record/save-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Save failed");
+      }
+      setDraft((prev) => {
+        if (!prev || prev.id !== data.draftId) return prev;
+        const next = { ...prev };
+        if (data.conversationMessages !== undefined) {
+          next.conversationMessages = data.conversationMessages;
+        }
+        if (data.diaryText !== undefined) next.diaryText = data.diaryText;
+        if (data.valence !== undefined) next.valence = data.valence;
+        if (data.arousal !== undefined) next.arousal = data.arousal;
+        if (data.musicSearchQuery !== undefined) next.musicSearchQuery = data.musicSearchQuery;
+        if (data.musicReason !== undefined) next.musicReason = data.musicReason;
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleBackFromReview = useCallback(async () => {
+    if (!draft) return;
+    await saveDraft({
+      draftId: draft.id,
+      currentStep: 1,
+      diaryText: null,
+      valence: null,
+      arousal: null,
+      musicSearchQuery: null,
+      musicReason: null,
+    });
+    setStep(1);
+  }, [draft, saveDraft]);
+
+  function handleStep2Complete(messages: Message[] | null){
+    setDraft((prev) => prev ? { ...prev, conversationMessages: messages } : prev);
+    setStep(2);
+  }
+  useEffect(() => {
+    //当前页面要关闭时，自动保存草稿
+    // draft或step变化，自动触发
+    const handleBeforeUnload = () => {
+      if (!draft) return;
+      const payload: Record<string, unknown> = { draftId: draft.id, currentStep: step };
+      // Step2 内对话由子组件 saveDraft 写库；父级 conversationMessages 易滞后，beacon 勿覆盖
+      if (step !== 1 && draft.conversationMessages != null) {
+        payload.conversationMessages = draft.conversationMessages;
+      }
+      navigator.sendBeacon("/api/record/save-draft", JSON.stringify(payload));
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return ()=>window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [draft, step]);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#f6f7f8" }}>
@@ -88,29 +214,37 @@ export default function RecordWizard({ userId, existingDraft }: Props) {
         {step === 0 && (
           <Step1Photo
             userId={userId}
-            onComplete={(d) => { setDraft(d); setStep(1); }}
+            existingPhotoUrl={existingDraft?.photoUrl ?? null}
+            existingDraftId={existingDraft?.id ?? null}
+            onComplete={(d) => {
+              setDraft(d);
+              setStep(1);
+              void saveDraft({ draftId: d.id, currentStep: 0 }).catch((e) => {
+                console.error(e);
+                alert(e instanceof Error ? e.message : "Save failed");
+              });
+            }}
           />
         )}
         {step === 1 && draft && (
-          <Step2Voice
+          <Step2Voice2
+            aiLang={aiLang}
+            // onLangChange={setAiLang}
             draft={draft}
-            onComplete={(transcript) => {
-              setDraft((prev) => prev ? { ...prev, transcript } : prev);
-              setStep(2);
-            }}
+            saveDraft={saveDraft}
+            onBack={()=>setStep(0)}
+            onLangChange={(lang: AiLang)=>setAiLang(lang)}
+            onComplete={handleStep2Complete}
+            initalMessages={draft.conversationMessages}
           />
         )}
         {step === 2 && draft && (
           <Step3Review
             draft={draft}
-            onComplete={(content) => { setGenerated(content); setStep(3); }}
-          />
-        )}
-        {step === 3 && draft && generated && (
-          <Step4Music
-            draft={draft}
-            generated={generated}
+            aiLang={aiLang}
+            onBack={handleBackFromReview}
             onComplete={(entryId) => router.push(`/diary/${entryId}?new=true`)}
+            saveDraft={saveDraft}
           />
         )}
       </main>

@@ -43,37 +43,13 @@ export default function DiaryClient({ entry, isNew }: Props) {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
-  // Music player
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+    // Music player
 
-  // Auto-play music on first visit
-  useEffect(() => {
-    if (isNew && entry.spotifyPreviewUrl && audioRef.current) {
-      audioRef.current.src = entry.spotifyPreviewUrl;
-      audioRef.current.play().catch(() => {});
-      setIsPlaying(true);
-    }
-  }, [isNew]);
 
-  function togglePlay() {
-    if (!entry.spotifyPreviewUrl || !audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      if (!audioRef.current.src) audioRef.current.src = entry.spotifyPreviewUrl;
-      audioRef.current.play();
-    }
-    setIsPlaying((p) => !p);
-  }
+
 
   function handleEnterDay() {
     setShowMask(false);
-    if (entry.spotifyPreviewUrl && audioRef.current) {
-      audioRef.current.src = entry.spotifyPreviewUrl;
-      audioRef.current.play().catch(() => {});
-      setIsPlaying(true);
-    }
   }
 
   function handleBack() {
@@ -141,7 +117,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden bg-black">
-      <audio ref={audioRef} onEnded={() => setIsPlaying(false)} className="hidden" />
+      {/* <audio ref={audioRef} onEnded={() => setIsPlaying(false)} className="hidden" /> */}
 
       {/* Full-screen photo background */}
       <div
@@ -283,28 +259,16 @@ export default function DiaryClient({ entry, isNew }: Props) {
           )}
 
           {/* Music player */}
-          {entry.spotifyTrackName && (
-            <div className="flex items-center gap-3 bg-black/30 backdrop-blur-sm rounded-2xl border border-white/10 p-3">
-              {entry.spotifyAlbumArt && (
-                <img
-                  src={entry.spotifyAlbumArt}
-                  alt={entry.spotifyTrackName}
-                  className="w-12 h-12 rounded-lg object-cover shrink-0"
-                />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-semibold text-sm truncate">{entry.spotifyTrackName}</p>
-                <p className="text-white/60 text-xs truncate">{entry.spotifyArtist}</p>
-              </div>
-              <button
-                onClick={togglePlay}
-                disabled={!entry.spotifyPreviewUrl}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 disabled:opacity-30 transition-opacity"
-                style={{ backgroundColor: "#0f58bd" }}
-              >
-                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-              </button>
-              <Music2 className="w-4 h-4 text-white/40 shrink-0" />
+          {entry.spotifyTrackId && (
+            <div className="rounded-2xl overflow-hidden">
+              <iframe
+                src={`https://open.spotify.com/embed/track/${entry.spotifyTrackId}?utm_source=generator&theme=0`}
+                width="100%"
+                height="152"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                style={{ borderRadius: "16px", border: "none" }}
+              />
             </div>
           )}
         </div>

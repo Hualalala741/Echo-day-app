@@ -1,64 +1,99 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MicOff, CheckCircle, Mic, Send } from "lucide-react";
+import { MicOff, CheckCircle, Mic, Send,ArrowLeft,Languages } from "lucide-react";
 import type { Draft } from "./RecordWizard";
+import type { AiLang } from "./RecordWizard";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  useLocalRuntime,
+  AssistantRuntimeProvider,
+  type ChatModelAdapter,
+} from "@assistant-ui/react";
+import {Thread} from "@/components/assistant-ui/thread";
 
-interface Message {
+export interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
 interface Props {
   draft: Draft;
-  onComplete: (transcript: string) => void;
+  aiLang: AiLang;
+  onLangChange: (lang: AiLang) => void;
+  onBack: ()=>void;
+  onComplete: (messages: Message[] | null) => void;
+  saveDraft: (data: {
+    draftId: string;
+    currentStep?: number;
+    conversationMessages?: Message[] | null;
+  }) => Promise<void>;
 }
 
 type RecordState = "idle" | "recording" | "processing";
 
-export default function Step2Voice({ draft, onComplete }: Props) {
+export default function Step2Voice({ draft,aiLang,onLangChange,onBack, onComplete, saveDraft }: Props) {
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [recordState, setRecordState] = useState<RecordState>("idle");
   const [isMuted, setIsMuted] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [isAiThinking, setIsAiThinking] = useState(false);
+
+  const isMutedRef = useRef(false); // 要用ref才能获取到即时状态
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStreamRef = useRef<MediaStream|null>(null);
+  const ttsUrlRef = useRef<string|null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Kick off first AI greeting on mount
   useEffect(() => {
-    sendToAI([], true);
+    const controller = new AbortController();
+    sendToAI([], true, controller.signal);
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, isAiThinking]);
+  
+  useEffect(()=>{
+    return ()=>releaseMedia();
+  },[])
 
-  async function sendToAI(history: Message[], isFirst = false) {
+  async function sendToAI(history: Message[], isFirst = false, signal?: AbortSignal) {
     setIsAiThinking(true);
     try {
       const res = await fetch("/api/record/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, photoUrl: draft.photoUrl, isFirst }),
+        body: JSON.stringify({ messages: history, photoUrl: draft.photoUrl, isFirst, aiLang }),
+        signal,
       });
       if (!res.ok) throw new Error("Chat failed");
       const { reply } = await res.json();
       const aiMsg: Message = { role: "assistant", content: reply };
       setMessages((prev) => [...prev, aiMsg]);
+      void saveDraft({
+        draftId: draft.id,
+        currentStep: 1,
+        conversationMessages: [...history, aiMsg],
+      }).catch((e) => console.error(e));
 
       // TTS if not muted
-      if (!isMuted) {
+      if (!isMutedRef.current) {
         const ttsRes = await fetch("/api/record/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: reply }),
+          signal,
         });
-        if (ttsRes.ok) {
+        if (ttsRes.ok&&!isMutedRef.current) {
           const blob = await ttsRes.blob();
           const url = URL.createObjectURL(blob);
+          ttsUrlRef.current = url;
           if (audioRef.current) audioRef.current.src = url;
           audioRef.current?.play();
         }
@@ -88,6 +123,28 @@ export default function Step2Voice({ draft, onComplete }: Props) {
   function stopRecording() {
     mediaRecorderRef.current?.stop();
     setRecordState("processing");
+  }
+  function stopPlayback(){
+    const audio = audioRef.current;
+    if(audio){
+      audio.pause();
+      audio.src = "";
+    }
+    if(ttsUrlRef.current){
+      URL.revokeObjectURL(ttsUrlRef.current);
+      ttsUrlRef.current = null;
+    }
+  }
+  function releaseMedia(){
+    const mr = mediaRecorderRef.current;
+    if(mr&&mr.state !== "inactive"){
+      mr.onstop = null; 
+      mr.stop();
+    }
+    mediaRecorderRef.current = null;
+    recordingStreamRef.current?.getTracks().forEach((t) => t.stop());
+    recordingStreamRef.current = null;
+    stopPlayback();
   }
 
   async function handleAudioBlob(blob: Blob) {
@@ -124,8 +181,15 @@ export default function Step2Voice({ draft, onComplete }: Props) {
     else if (recordState === "recording") stopRecording();
   }
 
-  function buildTranscript() {
-    return messages.map((m) => `${m.role === "user" ? "Me" : "Echo"}: ${m.content}`).join("\n\n");
+  function toggleMute() {
+    isMutedRef.current = !isMutedRef.current;
+    if(isMutedRef.current&&audioRef.current){
+      audioRef.current.pause()
+      audioRef.current.src = "";
+      if(ttsUrlRef.current) URL.revokeObjectURL(ttsUrlRef.current);
+      ttsUrlRef.current = null;
+    }
+    setIsMuted((prev) => !prev);
   }
 
   const isRecording = recordState === "recording";
@@ -133,6 +197,13 @@ export default function Step2Voice({ draft, onComplete }: Props) {
 
   return (
     <div>
+      <button
+        type='button'
+        onClick={()=>{onBack();releaseMedia();}}
+        className="flex items-center gap-2 text-lg font-semibold text-slate-600 hover:text-[#0f58bd] transition-colors">
+        <ArrowLeft className="w-4 h-4" />
+        Back to Photo
+      </button>
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">Step 2: AI Voice Conversation</h1>
         <p className="text-slate-500 text-lg">Tell Echo about this moment. It's listening to your story.</p>
@@ -184,6 +255,21 @@ export default function Step2Voice({ draft, onComplete }: Props) {
           {/* Transcript */}
           <div className="flex flex-col gap-3">
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Live Transcription</h3>
+
+            <div className="flex items-center gap-2 mb-2">
+            <Languages className="w-4 h-4 text-slate-500"/>
+            <span className="text-xs text-slate-500">模型语言</span>
+            <Select value={aiLang} onValueChange={(value)=>onLangChange(value as AiLang)}>
+              <SelectTrigger size="sm" className="w-[180px]">
+                <SelectValue>{aiLang === "zh-CN" ? "简体中文" : "English"}</SelectValue>
+              </SelectTrigger>
+              <SelectContent align='center' className="min-w-[9rem]">
+                <SelectItem value="zh-CN">简体中文</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+              </SelectContent>
+            </Select>
+            </div>
+            
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div ref={scrollRef} className="p-4 space-y-4 max-h-72 overflow-y-auto">
                 {messages.length === 0 && !isAiThinking && (
@@ -245,7 +331,7 @@ export default function Step2Voice({ draft, onComplete }: Props) {
           {/* Controls */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsMuted((m) => !m)}
+              onClick={toggleMute}
               className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl hover:bg-slate-50 transition-all shadow-sm text-sm"
             >
               <MicOff className="w-5 h-5" />
@@ -265,7 +351,20 @@ export default function Step2Voice({ draft, onComplete }: Props) {
             </button>
 
             <button
-              onClick={() => onComplete(buildTranscript())}
+              type="button"
+              onClick={async () => {
+                try {
+                  await saveDraft({
+                    draftId: draft.id,
+                    currentStep: 1,
+                    conversationMessages: messages,
+                  });
+                  onComplete(messages);
+                } catch (e) {
+                  console.error(e);
+                  alert(e instanceof Error ? e.message : "Save failed");
+                }
+              }}
               disabled={messages.length === 0}
               className="flex-[2] flex items-center justify-center gap-2 font-bold py-3 px-4 rounded-xl transition-all text-sm text-white disabled:opacity-40"
               style={{ backgroundColor: "#0f58bd", boxShadow: "0 4px 14px rgba(15,88,189,0.2)" }}
