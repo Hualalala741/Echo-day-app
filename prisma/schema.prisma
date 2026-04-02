@@ -104,6 +104,7 @@ model DiaryEntry {
   spotifyArtist    String?
   spotifyPreviewUrl String?
   spotifyAlbumArt  String?
+  embedding        String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 

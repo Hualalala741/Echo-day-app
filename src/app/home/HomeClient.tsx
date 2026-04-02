@@ -240,7 +240,7 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
         {view === "calendar" ? (
           <CalendarView entries={entries} year={year} month={month} />
         ) : (
-          <TimelineView entries={entries} />
+          <TimelineView/>
         )}
       </main>
 

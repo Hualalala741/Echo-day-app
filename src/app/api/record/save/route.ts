@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getMood } from "@/lib/mood-map";
+import { getEmbedding } from "@/lib/openai";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -49,6 +50,17 @@ export async function POST(req: NextRequest) {
       spotifyPreviewUrl: body.spotifyPreviewUrl,
     },
   });
+  // 计算embedding
+  try {
+    const vector = await getEmbedding(body.diaryText);
+    await prisma.$queryRaw`
+      UPDATE "DiaryEntry"
+      SET "embedding" = ${JSON.stringify(vector)}::vector
+      WHERE "id" = ${body.draftId}
+      `;
+  } catch (error) {
+    console.error("Error calculating embedding:", error);
+  }
 
   return NextResponse.json({ entryId: entry.id });
 }
