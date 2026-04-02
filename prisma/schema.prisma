@@ -55,16 +55,17 @@ enum Plan {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String    @id @default(cuid()) //主键 自动生成唯一id
   email         String    @unique
   emailVerified DateTime?           // required by NextAuth PrismaAdapter
+  passwordHash  String?          // 如果是only-google登录的就是null
   name          String?
   image         String?             // required by NextAuth PrismaAdapter (Google avatar)
   googleId      String?   @unique
   plan          Plan      @default(FREE)
   createdAt     DateTime  @default(now())
 
-  accounts Account[]
+  accounts Account[]      // 关联账号
   sessions Session[]
   entries  DiaryEntry[]
 }

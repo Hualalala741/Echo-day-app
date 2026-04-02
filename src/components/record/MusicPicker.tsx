@@ -11,6 +11,8 @@ export interface SpotifyTrack {
   previewUrl: string | null;
 }
 
+const PAGE_SIZE = 5;
+
 interface Props {
   musicSearchQuery?: string;
   musicReason?: string;
@@ -21,6 +23,7 @@ interface Props {
 export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, saving }: Props) {
   const [tracks, setTracks] = useState<SpotifyTrack[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [searchOffset, setSearchOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,27 +32,46 @@ export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, 
     if (!q) {
       setTracks([]);
       setCurrentIdx(0);
+      setSearchOffset(0);
       setError(null);
       setLoading(false);
       return;
     }
-    void searchTracks(q);
+    setSearchOffset(0);
+    void searchTracks(q, 0);
   }, [musicSearchQuery]);
 
-  async function searchTracks(query: string) {
+  async function searchTracks(query: string, offset: number) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`);
+      const url = `/api/spotify/search?q=${encodeURIComponent(query)}&offset=${offset}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Music search failed");
-      const data: SpotifyTrack[] = await res.json();
+      let data: SpotifyTrack[] = await res.json();
+      let usedOffset = offset;
+
+      if (data.length === 0 && offset > 0) {
+        const resFirst = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}&offset=0`);
+        if (!resFirst.ok) throw new Error("Music search failed");
+        data = await resFirst.json();
+        usedOffset = 0;
+      }
+
       setTracks(data);
       setCurrentIdx(0);
+      setSearchOffset(usedOffset);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to find music");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleNextBatch() {
+    const q = musicSearchQuery?.trim();
+    if (!q) return;
+    void searchTracks(q, searchOffset + PAGE_SIZE);
   }
   const track = tracks[currentIdx];
 
@@ -80,7 +102,10 @@ export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, 
           </div>
           <button
             type="button"
-            onClick={() => searchTracks(musicSearchQuery)}
+            onClick={() => {
+              const q = musicSearchQuery?.trim();
+              if (q) void searchTracks(q, searchOffset);
+            }}
             className="flex shrink-0 items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-red-700 transition-colors hover:bg-red-100 active:scale-[0.98]"
           >
             <RefreshCw className="h-3.5 w-3.5" />
@@ -111,14 +136,15 @@ export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, 
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex gap-2">
-              {/* <button
+              <button
                 type="button"
-                onClick={() => musicSearchQuery && searchTracks(musicSearchQuery)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                onClick={handleNextBatch}
+                disabled={loading}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-40"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 换一批
-              </button> */}
+              </button>
               <button
                 type="button"
                 onClick={() => setCurrentIdx((i) => Math.max(i - 1, 0))}

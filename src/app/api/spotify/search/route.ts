@@ -31,9 +31,13 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q");
   if (!q) return NextResponse.json({ error: "Missing query" }, { status: 400 });
 
+  const offsetRaw = req.nextUrl.searchParams.get("offset");
+  const parsed = offsetRaw !== null ? Number.parseInt(offsetRaw, 10) : 0;
+  const offset = Number.isFinite(parsed) ? Math.min(1000, Math.max(0, parsed)) : 0;
+
   const token = await getSpotifyToken();
   const res = await fetch(
-    `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=5`,
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=5&offset=${offset}`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
 

@@ -17,6 +17,17 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CalendarView from "@/components/home/CalendarView";
 import TimelineView from "@/components/home/TimelineView";
+import { signOut } from "next-auth/react";
+import { LogOut, Settings } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type EntryPreview = {
   id: string;
@@ -34,7 +45,7 @@ interface Props {
   entries: EntryPreview[];
   year: number;
   month: number;
-  user: { name: string | null; image: string | null };
+  user: { name: string | null; image: string | null; email: string | null };
   todayEntry: { id: string; status: string } | null;
 }
 
@@ -129,18 +140,47 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
             <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
               {/* Avatar */}
               <div className="relative cursor-pointer">
-                <Avatar className="w-10 h-10 border-2" style={{ borderColor: PRIMARY }}>
-                  <AvatarImage src={user.image ?? undefined} />
-                  <AvatarFallback
-                    className="text-sm font-semibold"
-                    style={{ backgroundColor: "#dbeafe", color: PRIMARY }}
+
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    className="cursor-pointer rounded-full outline-none hover:opacity-80 hover:scale-105 transition-all"
                   >
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+                    <Avatar className="w-10 h-10 border-2" style={{ borderColor: PRIMARY }}>
+                      <AvatarImage src={user.image ?? undefined} />
+                      <AvatarFallback
+                        className="text-sm font-semibold"
+                        style={{ backgroundColor: "#dbeafe", color: PRIMARY }}
+                      >
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-45">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="font-normal">
+                      <p className="text-sm font-medium text-slate-900">{user.name ?? "User"}</p>
+                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      onClick={() => signOut({ callbackUrl: "/login" })}
+                      className="cursor-pointer "
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+                </DropdownMenu>
+
+
                 <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
               </div>
             </div>
+
           </div>
         </div>
       </header>

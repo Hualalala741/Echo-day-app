@@ -2,11 +2,24 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { Sparkles } from "lucide-react";
+import { Sparkles,Eye, EyeOff, Loader2  } from "lucide-react";
+
 
 export default function LoginPage() {
+  
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function switchMode() {
+    setMode(mode === "login" ? "register" : "login");
+    setError(null);
+  }
+
 
   async function handleGoogleSignIn() {
     setIsLoading(true);
@@ -15,9 +28,40 @@ export default function LoginPage() {
 
   async function handleEmailSignIn(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
+    if (!email||!password||(mode === "register" && !name)) return;
     setIsLoading(true);
-    await signIn("email", { email, callbackUrl: "/home" });
+    setError(null);
+    try {
+      if(mode === "register"){
+        const res = await fetch("/api/auth/register",{
+          method: "POST",
+          headers:{"Content-Type": "application/json"},
+          body: JSON.stringify({email,password,name})
+        })
+        if(!res.ok){
+          const data = await res.json();
+          throw new Error(data.error?? "Registration failed");
+        }
+        
+      }
+      // 登录
+      const result = await signIn("credentials",{
+        email,
+        password,
+        redirect: false,
+      });
+      if(result?.error){
+        throw new Error(mode === "login" ? "Invalid email or password" : 
+          "Account created but login failed. Please try logging in.");
+      }
+      //会触发浏览器的完整页面刷新。
+      //这次请求会带上刚设置好的新 cookie，middleware 正确识别到你已登录，服务端渲染也能拿到正确的 session
+      window.location.href = "/home";
+    
+    }catch(error){
+      setError((error as Error).message);
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -27,11 +71,14 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center gap-4 mb-8">
           <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center">
-            <Sparkles className="w-8 h-8 text-indigo-600" strokeWidth={1.5} />
+            <Sparkles className="w-8 h-8 text-[#0f58bd]" strokeWidth={1.5} />
           </div>
           <div className="text-center">
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Echo Day</h1>
-            <p className="mt-1.5 text-sm text-slate-400">Welcome back to your memories</p>
+            <p className="mt-1.5 text-sm text-slate-400">
+              
+              {mode === "register" ? "Start capturing your memories" : "Welcome back to your memories"}
+            </p>
           </div>
         </div>
 
@@ -54,9 +101,15 @@ export default function LoginPage() {
             <span className="bg-white px-3 text-xs text-slate-400">or email sign in</span>
           </div>
         </div>
+        {error && (
+  <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 text-sm text-red-600">
+    {error}
+  </div>
+)}
 
         {/* Email Sign In */}
         <form onSubmit={handleEmailSignIn} className="space-y-3">
+          {/* 邮箱 */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
               Email address
@@ -70,25 +123,69 @@ export default function LoginPage() {
               className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition"
             />
           </div>
+            {mode==="register" && (
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e)=>setName(e.target.value)}
+                  placeholder="Enter your name"
+                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition"
+                />
+              </div>
+            )}
+
+          {/* 密码 */}
+          <div>
+            <label htmlFor='password' className="block text-sm font-medium text-slate-700 mb-1.5">
+              Password
+            </label>
+            <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+            </div>
+
+          </div>
+
+
+{/* 提交按钮 */}
           <button
             type="submit"
-            disabled={isLoading || !email}
-            className="w-full h-12 rounded-xl bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700 active:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading || !email || !password}
+            className="w-full h-12 rounded-xl bg-[#0d4a9f] text-sm font-semibold text-white hover:bg-[#0f58bd]/80 active:bg-[#0f58bd]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign In
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 
+              mode === "login" ? "Sign In" : "Create Account"}
           </button>
         </form>
       </div>
 
       {/* Footer */}
-      <div className="mt-6 text-center space-y-3">
+      <div className="flex flex-col items-center mt-6 text-center space-y-3">
         <p className="text-sm text-slate-500">
-          New to Echo Day?{" "}
+          {mode === "login" ? "New to Echo Day?" : "Already have an account?"}
           <button
-            onClick={handleGoogleSignIn}
-            className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
+            onClick={switchMode}
+            className="ml-2 font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
           >
-            Create an account
+            {mode === "login" ? "Create an account" : "Sign In"}
           </button>
         </p>
         <div className="flex items-center gap-4 text-xs text-slate-400">

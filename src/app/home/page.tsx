@@ -74,6 +74,7 @@ export default async function HomePage({ searchParams }: Props) {
       user={{
         name: session.user.name ?? null,
         image: session.user.image ?? null,
+        email: session.user.email ?? null,
       }}
       todayEntry={todayEntry ? { id: todayEntry.id, status: todayEntry.status } : null}
     />
