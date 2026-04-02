@@ -144,7 +144,7 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
             const chunk = JSON.parse(data);
             fullText += chunk.chunk;
             yield {content: [{type: "text", text: fullText}]};
-          } catch{
+          } catch(e){
             console.error(e);
           }
         }
@@ -176,7 +176,7 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
         conversationMessages: allMessages as Message[],
       }).catch((e) => console.error(e));
       // 前端ui需要的格式
-      return {
+      yield {
         content: [{type: "text" as const, text: fullText}]
       }
     }
