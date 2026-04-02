@@ -1,11 +1,10 @@
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  try {
-    const count = await prisma.user.count();
-    return NextResponse.json({ ok: true, userCount: count });
-  } catch (e) {
-    return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
-  }
+  return NextResponse.json({ 
+    ok: true, 
+    dbUrl: process.env.DATABASE_URL ? "set" : "missing",
+    authSecret: process.env.AUTH_SECRET ? "set" : "missing",
+    googleId: process.env.GOOGLE_CLIENT_ID ? "set" : "missing",
+  });
 }
