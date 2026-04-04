@@ -28,6 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import SearchOverlay from "@/components/home/SearchOverlay";
 
 export type EntryPreview = {
   id: string;
@@ -111,7 +112,7 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f6f7f8" }}>
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-white border-b border-slate-200 px-6 md:px-10 lg:px-20">
+      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 md:px-10 lg:px-20">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <div className="flex items-center gap-3 shrink-0">
@@ -123,6 +124,7 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900">Echo Day</span>
           </div>
+          <SearchOverlay />
 
           {/* Right section */}
           <div className="flex items-center gap-4">

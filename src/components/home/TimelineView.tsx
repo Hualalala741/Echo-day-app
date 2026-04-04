@@ -13,6 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { EntryPreview } from "@/app/home/HomeClient";
+import DiaryCard from "./DiaryCard";
 
 // 格式化日期
 function formatCardDate(iso: string) {
@@ -141,12 +142,10 @@ export default function TimelineView() {
       {/* 日期筛选 */}
       <div className="flex items-center gap-2 mb-5">
         <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline"
-            className="flex items-center gap-2">
-              <CalendarIcon className="size-4" />
-              {startDate ? format(startDate, "yyyy-MM-dd") : "选择日期"}
-            </Button>
+          <PopoverTrigger 
+          render={<Button variant="outline" className="flex items-center gap-2"/>}>
+            <CalendarIcon className="size-4" />
+            {startDate ? format(startDate, "yyyy-MM-dd") : "选择日期"}
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto p-0">
             <Calendar
@@ -210,54 +209,12 @@ export default function TimelineView() {
             >
               {entry.moodEmoji ?? "📓"}
             </div>
-
-            {/* Card */}
-            <div
-              onClick={() => router.push(`/diary/${entry.id}`)}
-              className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 cursor-pointer hover:shadow-md transition-shadow duration-150 min-w-0"
-            >
-              {/* Title row */}
-              <div className="flex items-baseline justify-between gap-2 mb-2">
-                <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
-                  {cardTitle(entry)}
-                </h3>
-                <span className="text-xs text-slate-400 font-medium shrink-0">
-                  {formatCardDate(entry.date)}
-                </span>
-              </div>
-
-              {/* Excerpt */}
-              {entry.diaryText && (
-                <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-3">
-                  {entry.diaryText}
-                </p>
-              )}
-
-              {/* Photo */}
-              {entry.photoUrl && (
-                <div className="rounded-xl overflow-hidden bg-slate-100">
-                  <img
-                    src={entry.photoUrl}
-                    alt=""
-                    className="w-full object-cover max-h-52"
-                  />
-                </div>
-              )}
+            <div className="flex-1 min-w-0">
+              <DiaryCard entry={entry} />
             </div>
           </div>
         ))}
       </div>
-
-      {/*  哨兵元素 */}
-      <div ref={sentinelRef} className="h-1" />
-
-      {/* 加载更多提示，只在非首次加载时显示 */}
-      {isLoading && !initialLoading && (
-        <div className="text-center text-sm text-slate-400 py-4">
-          加载中...
-        </div>
-      )}
-
       {/* 到底了 */}
       {!hasMore && entries.length > 0 &&(
         <div className="py-4 text-center text-sm text-slate-400">

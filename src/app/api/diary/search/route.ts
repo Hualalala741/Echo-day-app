@@ -11,9 +11,10 @@ export async function GET(req: NextRequest) {
 
   const query = req.nextUrl.searchParams.get("q")?.trim();
   if(!query) return NextResponse.json({entries: []});
-  const vector = await getEmbedding(query);
+  const vector = await getEmbedding(query); // 搜索词的向量
   const vectorLiteral = `'[${vector.join(",")}]'::vector`;
-  try {
+
+  try { 
     const entries = await prisma.$queryRawUnsafe(`
       SELECT id, date, "diaryText", "photoUrl",
              "moodEmoji", "moodColorHex", "emotionLabel",
