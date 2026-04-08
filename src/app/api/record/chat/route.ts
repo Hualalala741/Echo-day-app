@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
   for (const m of messages) {
     apiMessages.push({ role: m.role, content: m.content });
   }
-  console.log('apiMessages', JSON.stringify(apiMessages, null, 2));
   
   // 调用模型
   // 流式：openai 边生成边返回，每生成几个字就发一个 chunk 过来
@@ -63,7 +62,6 @@ export async function POST(req: NextRequest) {
       for await (const chunk of stream){
         // 每个 chunk 的结构：chunk.choices[0].delta.content
         // delta.content 就是这一小段新生成的文字，比如 "你"、"好"、"！"
-        console.log('chunk', chunk);
         const text = chunk.choices[0]?.delta?.content ?? "";
         if(text){
           // 用SSE格式发给浏览器

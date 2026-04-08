@@ -66,10 +66,6 @@ const STEPS = ["Photo Upload", "AI Voice Conversation", "Review & Music"];
 
 export default function RecordWizard({ userId, existingDraft}: Props) {
   const router = useRouter();
-  useEffect(()=>{
-    console.log("existingDraft", existingDraft);
-  },[]);
-
   const initialStep = Math.min(existingDraft?.currentStep ?? 0, 2);
   const [step, setStep] = useState(initialStep);
   const [aiLang, setAiLang] = useState<AiLang>("zh-CN");

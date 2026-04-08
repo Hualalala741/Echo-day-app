@@ -22,7 +22,6 @@ async function main() {
       SET "embedding" = ${JSON.stringify(vector)}::vector
       WHERE "id" = ${entry.id}
       `;
-      console.log(`✓ ${entry.id}`);
     } catch (error) {
       console.error(`✗ ${entry.id}: ${error}`);
     }

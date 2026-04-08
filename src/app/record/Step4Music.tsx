@@ -46,7 +46,6 @@ export default function Step4Music({ draft, generated, onComplete }: Props) {
       const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error("Music search failed");
       const data: SpotifyTrack[] = await res.json();
-      console.log('searchTracks data', data);
       setTracks(data);
       setCurrentIdx(0); // 重置到第一首
     } catch (e) {

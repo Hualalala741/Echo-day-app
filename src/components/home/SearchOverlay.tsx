@@ -66,8 +66,6 @@ export default function SearchOverlay() {
 
   function handleClose() {
     setOpen(false);
-    setQuery("");
-    setResults([]);
     inputRef.current?.blur();
     clearTimeout(debounceRef.current);
   }
@@ -84,19 +82,28 @@ export default function SearchOverlay() {
     className="w-40 sm:w-56 text-sm text-slate-900 placeholder:text-slate-400 outline-none bg-transparent"
   />
   {query && (
-    <button onClick={handleClose} className="text-slate-400 hover:text-slate-600">
+    <button onClick={
+      () => {
+        handleClose();
+        setQuery("");
+        setResults([]);
+        inputRef.current?.blur();
+        clearTimeout(debounceRef.current);
+      }
+    } className="text-slate-400 hover:text-slate-600">
       <X className="w-4 h-4" />
     </button>
   )}
 </div>
     {/* 蒙层 */}
     {open && (
-      <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+      <div 
+      onClick={handleClose}
+      className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center">
         {/* 搜索面板 */}
         {/* 结果面板-阻止点击冒泡 */}
-        <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-4"
+        <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-4 overflow-y-auto"
           onClick={(e) => e.stopPropagation()}>
-
         {/* 搜索结果 */}
         <div>
           {loading && (
@@ -119,9 +126,6 @@ export default function SearchOverlay() {
           )}
         </div>
       </div>
-
-{/* 点击空白处关闭 */}
-      <div className="flex-1 w-full" onClick={handleClose}/>
     </div>
     )}
     </>
