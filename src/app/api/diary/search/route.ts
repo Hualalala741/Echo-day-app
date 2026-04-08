@@ -23,8 +23,9 @@ export async function GET(req: NextRequest) {
       WHERE "userId" = $1
         AND status = 'COMPLETE'
         AND embedding IS NOT NULL
+        AND 1-(embedding <=> ${vectorLiteral})>= 0.4
       ORDER BY embedding <=> ${vectorLiteral}
-      LIMIT 10
+      LIMIT 20
     `, session.user.id);
       return NextResponse.json({entries: entries});
   }

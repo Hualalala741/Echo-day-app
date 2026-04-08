@@ -70,9 +70,9 @@ export default function SearchOverlay() {
     clearTimeout(debounceRef.current);
   }
   return (
-    <>
+  <div className="relative">
     {/* 展示在header的部分 */}
-    <div className="relative z-50 flex items-center gap-2 h-10 px-3 rounded-lg border border-slate-200 bg-white">
+  <div className="relative z-50 flex items-center gap-2 h-10 px-3 rounded-lg border border-slate-200 bg-white">
   <Search className="w-4 h-4 text-slate-400 shrink-0" />
   <input
     value={query}
@@ -102,7 +102,7 @@ export default function SearchOverlay() {
       className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center">
         {/* 搜索面板 */}
         {/* 结果面板-阻止点击冒泡 */}
-        <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-4 overflow-y-auto"
+        <div className="absolute top-[10%] w-full sm:max-w-md md:max-w-lg lg:max-w-2xl bg-white rounded-xl shadow-lg p-4 overflow-y-auto max-h-[88%]"
           onClick={(e) => e.stopPropagation()}>
         {/* 搜索结果 */}
         <div>
@@ -128,6 +128,6 @@ export default function SearchOverlay() {
       </div>
     </div>
     )}
-    </>
+    </div>
   );
 }
