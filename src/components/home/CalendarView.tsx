@@ -38,7 +38,7 @@ export default function CalendarView({ entries, year, month }: Props) {
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
       {/* Day header */}
       <div className="grid grid-cols-7 border-b border-slate-100">
         {DAY_LABELS.map((d) => (
@@ -88,16 +88,17 @@ export default function CalendarView({ entries, year, month }: Props) {
                   {/* Hover preview card */}
                   {entry && (
                     <div className="
-                      absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 w-52
+                      absolute bottom-full left-1/2 -translate-x-1/2 z-30 w-52
                       bg-white rounded-xl shadow-xl border border-slate-100
                       opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100
                       transition-all duration-150 pointer-events-none overflow-hidden
                     ">
                       {/* Photo */}
-                      <div className="h-28 bg-slate-100 overflow-hidden">
+                      <div className="h-25 bg-slate-100 overflow-hidden">
                         <img
                           src={entry.photoUrl}
                           alt=""
+                          loading="lazy"
                           className="w-full h-full object-cover"
                         />
                       </div>

@@ -18,7 +18,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CalendarView from "@/components/home/CalendarView";
 import TimelineView from "@/components/home/TimelineView";
 import { signOut } from "next-auth/react";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { useHomeStore } from "@/store/useHomeStore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,7 +63,7 @@ const PRIMARY = "#0f58bd";
 
 export default function HomeClient({ entries, year, month, user, todayEntry }: Props) {
   const router = useRouter();
-  const [view, setView] = useState<View>("calendar");
+  const {viewMode, setViewMode} = useHomeStore();
   const [showConfirm, setShowConfirm] = useState(false);
 
   function navigateMonth(delta: number) {
@@ -188,7 +189,7 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
       </header>
 
       {/* Welcome + Toggle */}
-      <div className="px-6 md:px-10 lg:px-20 pt-8 pb-4 flex items-end justify-between">
+      <div className="px-6 md:px-10 lg:px-20 mb-4 pt-8 pb-4 flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Welcome back, {firstName}</h1>
           <p className="text-sm text-slate-500 mt-0.5">
@@ -203,9 +204,9 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
           {(["calendar", "timeline"] as View[]).map((v) => (
             <button
               key={v}
-              onClick={() => setView(v)}
+              onClick={() => setViewMode(v)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-all ${
-                view === v
+                viewMode === v
                   ? "bg-white text-slate-800 shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
               }`}
@@ -217,8 +218,8 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
       </div>
 
       {/* Month nav */}
-      {view === "calendar" && (
-        <div className="px-6 md:px-10 lg:px-20 pb-3 flex items-center gap-2">
+      {viewMode === "calendar" && (
+        <div className="px-6 md:px-10 lg:px-20 mb-4 pb-3 flex items-center gap-2">
           <button
             onClick={() => navigateMonth(-1)}
             className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 transition-colors text-xl leading-none"
@@ -238,8 +239,8 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
       )}
     
       {/* Content */}
-      <main className="px-6 md:px-10 lg:px-20 pb-16">
-        {view === "calendar" ? (
+      <main className="px-6 z-50 md:px-10 lg:px-20 pb-16">
+        {viewMode === "calendar" ? (
           <CalendarView entries={entries} year={year} month={month} />
         ) : (
           <TimelineView/>
