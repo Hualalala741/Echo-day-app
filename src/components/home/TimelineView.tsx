@@ -1,103 +1,67 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { EntryPreview } from "@/app/home/HomeClient";
 import DiaryCard from "./DiaryCard";
 
-// 格式化日期
-function formatCardDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", {
-    month: "short", day: "numeric", timeZone: "UTC",
-  }).toUpperCase();
-}
-
-// 卡片标题
-function cardTitle(entry: EntryPreview) {
-  const d = new Date(entry.date);
-  const weekday = d.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
-  return entry.emotionLabel ? `${entry.emotionLabel} ${weekday}` : weekday;
-}
 
 export default function TimelineView() {
   const router = useRouter();
-
   // state
-  const [entries, setEntries] = useState<EntryPreview[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null); // 下一页的 cursor
-  const [isLoading, setIsLoading] = useState(false); // 底部spinner
-  const [initialLoading, setInitialLoading] = useState(true); // 骨架屏
-  const [hasMore, setHasMore] = useState(true); // 是否还有更多数据
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);// 开始日期
 
   // refs
   const sentinelRef = useRef<HTMLDivElement>(null);// 放在列表底部的"哨兵"元素，被观察到时触发加载
 
-  const fetchingRef = useRef(false); // 防止重复请求
 
-  // 请求数据
-  const fetchPage = useCallback(
-    async (cursor: string | null, replace: boolean) =>{
-      // 用ref做锁， 比state更合适
-      // setState 是异步的，两次快速调用之间state可能还没更新
-      if(fetchingRef.current) return;
-      fetchingRef.current = true;
-      setIsLoading(true);
-
-      try{
-        const params = new URLSearchParams();
-        if(cursor){
-          params.set("cursor", cursor)
-        }else if(startDate){
-          params.set("startDate", format(startDate, "yyyy-MM-dd"))
-        }
-        // 如果两个都没有就是默认最新开始
-        const res = await fetch(`/api/diary/timeline?${params}`)
-        if(!res.ok){
-          throw new Error("Failed to fetch timeline data")
-        }
-        const data = await res.json();
-        
-        setEntries(
-          (prev: EntryPreview[])=>{
-            const newEntries = replace ? data.entries : [...prev,...data.entries]
-            return newEntries;
-          }
-        )
-        setNextCursor(data.nextCursor)
-        setHasMore(data.nextCursor !==null);
-      }catch(error){
-        console.error("timeline fetch error:", error);
-      }finally{
-        setIsLoading(false);
-        fetchingRef.current = false;
-        setInitialLoading(false);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ["timeline", startDate?.toISOString()], // startDate变了，queryKey变了，会重新请求
+    queryFn: async({pageParam})=>{
+      // pageParam是cursor 第一页是undefined
+      // 这里写原来的fetchPage的逻辑
+      const params = new URLSearchParams();
+      if(pageParam){
+        params.set("cursor", pageParam)
+      }else if(startDate){
+        params.set("startDate", format(startDate,"yyyy-MM-dd"))
       }
+      const res = await fetch(`/api/diary/timeline?${params}`)
+      if(!res.ok) throw new Error("Failed to fetch timeline data")
+      const data = await res.json()
+      return data
     },
-    [startDate] // startDate变了，fetch会重新创建，下面useEffect会重新执行
-    // 为什么不是cursor是startDate
-    // useCallback主要是为了让这个函数的引用地址不要变
-    // 主要是因为下面这个useEffect 一定要依赖这个函数
-  )
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  })
+  // useInfiniteQuery 会自动处理分页，不需要我们手动处理
+  //数据结构：data = {
+//   pages: [
+//     { entries: [...], nextCursor: "abc" },   // 第一页
+//     { entries: [...], nextCursor: "def" },   // 第二页
+//     { entries: [...], nextCursor: null },     // 最后一页
+//   ],
+//   pageParams: [null, "abc", "def"]
+// }
 
-  useEffect(() => {
-    setEntries([]);
-    setNextCursor(null);
-    setHasMore(true);
-    setInitialLoading(true); // 骨架屏
-    fetchPage(null, true); // cursor=null表示从头开始，replace表示替换
-  }, [fetchPage]);
+const entries = data?.pages.flatMap((page)=>page.entries)??[];
+
+  
 
 
   /// IntersectionObserver - 无限滚动的核心
@@ -125,15 +89,15 @@ export default function TimelineView() {
     const observer = new IntersectionObserver((observed)=>{
       // observed[0] 就是观察的哨兵元素
       // isIntersecting=true 表示哨兵元素进入了视口
-      if(observed[0].isIntersecting && hasMore && !fetchingRef.current){
-        fetchPage(nextCursor, false);
+      if(observed[0].isIntersecting && hasNextPage && !isFetchingNextPage){
+        fetchNextPage();
       }
     },
     {rootMargin: "200px"} // 提前200px加载下一页
   );
   observer.observe(el); // 开始观察哨兵元素
   return ()=> observer.disconnect(); // 卸载时停止观察,防止内存泄露
-  }, [hasMore, fetchPage, nextCursor])
+  }, [hasNextPage, fetchNextPage])
 
   // 渲染
   return (
@@ -172,7 +136,7 @@ export default function TimelineView() {
 
 
       {/* 骨架屏 */}
-      {initialLoading && (
+      {isLoading && (
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex gap-4 items-start animate-pulse">
@@ -188,7 +152,7 @@ export default function TimelineView() {
       )}
 
        {/* 空状态 */}
-       {!initialLoading && !isLoading && entries.length === 0 && (
+       {!isLoading && entries.length === 0 && (
         <div className="py-20 text-center text-sm text-slate-400">
             无日记记录
         </div>
@@ -215,8 +179,9 @@ export default function TimelineView() {
           </div>
         ))}
       </div>
+      <div ref={sentinelRef} style={{ height: 1 }} />
       {/* 到底了 */}
-      {!hasMore && entries.length > 0 &&(
+      {!hasNextPage && entries.length > 0 &&(
         <div className="py-4 text-center text-sm text-slate-400">
           --- 就这么多啦～ ---
         </div>

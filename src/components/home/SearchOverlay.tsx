@@ -4,13 +4,14 @@ import {useState, useRef, useCallback, useEffect} from "react";
 import { Loader2, Search, X } from "lucide-react";
 import DiaryCard from "@/components/home/DiaryCard";
 import type { EntryPreview } from "@/app/home/HomeClient";
+import { useSearchStore } from "@/store/useSearchStore";
 
 const PRIMARY = "#0f58bd";
 
 export default function SearchOverlay() {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<EntryPreview[]>([]);
+  const {open, setOpen} = useSearchStore();
+  const {query, setQuery} = useSearchStore();
+  const {results, setResults} = useSearchStore();
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
