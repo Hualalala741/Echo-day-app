@@ -10,8 +10,6 @@ interface Props {
   month: number; // 1-indexed
 }
 
-const PRIMARY = "#0f58bd";
-
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function CalendarView({ entries, year, month }: Props) {
@@ -66,7 +64,7 @@ export default function CalendarView({ entries, year, month }: Props) {
                 flex flex-col items-center
                 ${entry ? "cursor-pointer group" : ""}
               `}
-              style={{ backgroundColor:(entry?.moodColorHex)+"33", }}
+              style={{ backgroundColor: entry?.moodColorHex ? `${entry.moodColorHex}33` : undefined }}
             >
               {day && (
                 <>
