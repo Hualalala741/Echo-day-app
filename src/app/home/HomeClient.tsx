@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Plus ,Globe, Camera} from "lucide-react";
+import { Sparkles, Plus ,Globe, Camera, Sun, Moon} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import SearchOverlay from "@/components/home/SearchOverlay";
 import { Spinner } from "@/components/ui/spinner";
+import { useThemeStore } from "@/store/useThemeStore";
 
 export type EntryPreview = {
   id: string;
@@ -59,14 +60,14 @@ const MONTH_NAMES = [
 
 type View = "calendar" | "timeline";
 
-// Design token: #0f58bd
-const PRIMARY = "#0f58bd";
 
 export default function HomeClient({ entries, year, month, user, todayEntry }: Props) {
   const router = useRouter();
   const [lang, setLang] = useState<'en' | 'zh'>(user.preferredLang);
   const {viewMode, setViewMode} = useHomeStore();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const {theme, toggleTheme} = useThemeStore();
 
 
   function handleLangChange(newLang: 'en' | 'zh'){
@@ -99,6 +100,8 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
     }
   }
   async function handleReplace() {
+    if(deleting) return;
+    setDeleting(true);
     if(todayEntry?.id){
       try{
         const res = await fetch(`/api/diary/${todayEntry.id}`,{method:"DELETE"})
@@ -108,6 +111,8 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
       }catch(error){
         console.error(error);
         alert((error as Error).message);
+        setDeleting(false);
+        return;
       }
     }
     router.push("/record");
@@ -145,21 +150,21 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
       setUploading(false);
     }
   }
+  //  style={{ backgroundColor: "#f6f7f8" }}
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#f6f7f8" }}>
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-[100] bg-white border-b border-slate-200 px-6 md:px-10 lg:px-20">
+      <header className="sticky top-0 z-[100] bg-card border-b border-border px-6 md:px-10 lg:px-20">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <div className="flex items-center gap-3 shrink-0">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: PRIMARY }}
+              className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center"
             >
-              <Sparkles className="w-5 h-5 text-white" strokeWidth={1.5} />
+              <Sparkles className="w-5 h-5 text-brand-foreground" strokeWidth={1.5} />
             </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">Echo Day</span>
+            <span className="text-xl font-bold tracking-tight text-foreground">Echo Day</span>
           </div>
           <SearchOverlay />
 
@@ -168,15 +173,14 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
             {/* New Entry */}
             <button
               onClick={handleNewEntry}
-              className="flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
-              style={{ backgroundColor: PRIMARY }}
+              className="flex items-center bg-brand gap-1.5 h-10 px-4 rounded-lg text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
             >
               <Plus className="w-5 h-5" />
               <span className="hidden sm:inline">{newEntryLabel}</span>
             </button>
 
             {/* Divider + avatar area */}
-            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+            <div className="flex items-center gap-3 pl-3 border-l border-border">
               {/* Avatar */}
               <div className="relative cursor-pointer">
 
@@ -184,11 +188,11 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
                   <DropdownMenuTrigger
                     className="cursor-pointer rounded-full outline-none hover:opacity-80 hover:scale-105 transition-all"
                   >
-                    <Avatar className="w-10 h-10 border-2" style={{ borderColor: PRIMARY }}>
+                    <Avatar className="w-10 h-10 border-2" style={{ borderColor: "var(--border)" }}>
                       <AvatarImage src={avatarUrl ?? undefined} />
                       <AvatarFallback
                         className="text-sm font-semibold"
-                        style={{ backgroundColor: "#dbeafe", color: PRIMARY }}
+                        style={{ backgroundColor: "color-mix(in srgb, var(--brand) 15%, transparent)", color: "var(--brand)" }}
                       >
                         {initials}
                       </AvatarFallback>
@@ -197,8 +201,8 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
                 <DropdownMenuContent align="end" className="w-45 z-[200]">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel className="font-normal">
-                      <p className="text-sm font-medium text-slate-900">{user.name ?? "User"}</p>
-                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      <p className="text-sm font-medium text-foreground">{user.name ?? "User"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuItem className="cursor-pointer">
                       {uploading ? (
@@ -217,12 +221,16 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
                   </DropdownMenuGroup>
 
                   <DropdownMenuSeparator />
-
-                  <span className="text-sm font-medium text-slate-900 px-2">Model Language</span>
+                  <div className="flex items-center px-2 gap-2">
+                  <span className="text-sm font-medium text-foreground">Model Language</span>
+                  <Globe className="w-4 h-4 mr-2" />  
+                  </div>
                   <div
-                  className="mx-2 my-1.5 flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5"
+                  className="mx-2 my-1.5 flex items-center bg-muted rounded-lg p-0.5 gap-0.5"
                   onClick={(e) => e.stopPropagation()}
                   > 
+                  
+                  
                   
                   {(["en", "zh"] as const).map((l) => (
                     <button
@@ -230,13 +238,39 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
                       onClick={() => handleLangChange(l)}
                       className={`flex-1 px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
                         lang === l
-                          ? "bg-white text-slate-800 shadow-sm"
-                          : "text-slate-500 hover:text-slate-700"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {l === "en" ? "English" : "中文"}
                     </button>
                   ))}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <div className="flex items-center px-2">
+                  <span className="text-sm font-medium text-foreground">Theme</span>
+                  <div
+                  className="mx-2 my-1.5 flex items-center bg-muted rounded-lg p-0.5 gap-0.5"
+                  onClick={(e) => e.stopPropagation()}
+                  > 
+                  {(["light","dark"] as const).map((t)=>{
+                    return (
+                      <button key={t}
+                        onClick={()=>{
+                          if(t === theme) return;
+                          toggleTheme();
+                        }}
+                        className={`flex-1 px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                          t === theme
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {t === "light" ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+                        </button>
+                    )
+                  })}
+                  </div>
                   </div>
             
                   <DropdownMenuSeparator />
@@ -261,8 +295,8 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
       {/* Welcome + Toggle */}
       <div className="px-6 md:px-10 lg:px-20 mb-4 pt-8 pb-4 flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Welcome back, {firstName}</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-foreground">Welcome back, {firstName}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
             {entries.length > 0
               ? `You have ${entries.length} entr${entries.length === 1 ? "y" : "ies"} this month.`
               : "Start recording your day!"}
@@ -270,15 +304,15 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
         </div>
 
         {/* View toggle */}
-        <div className="flex items-center bg-slate-200 rounded-xl p-1 gap-1">
+        <div className="flex items-center bg-card rounded-xl p-1 gap-1">
           {(["calendar", "timeline"] as View[]).map((v) => (
             <button
               key={v}
               onClick={() => setViewMode(v)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-all ${
                 viewMode === v
-                  ? "bg-white text-slate-800 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {v === "calendar" ? "Calendar" : "Timeline"}
@@ -292,16 +326,16 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
         <div className="px-6 md:px-10 lg:px-20 mb-4 pb-3 flex items-center gap-2">
           <button
             onClick={() => navigateMonth(-1)}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 transition-colors text-xl leading-none"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground transition-colors text-xl leading-none"
           >
             ‹
           </button>
-          <span className="text-sm font-semibold text-slate-600">
+          <span className="text-sm font-semibold text-foreground">
             {MONTH_NAMES[month - 1]} {year}
           </span>
           <button
             onClick={() => navigateMonth(1)}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 transition-colors text-xl leading-none"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground transition-colors text-xl leading-none"
           >
             ›
           </button>
@@ -327,8 +361,10 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel onClick={() => setShowConfirm(false)}>Cancel</AlertDialogCancel>
-        <AlertDialogAction onClick={handleReplace} className='bg-red-500 hover:bg-red-600'>Confirm</AlertDialogAction>
+        <AlertDialogCancel onClick={() => setShowConfirm(false)} disabled={deleting}>Cancel</AlertDialogCancel>
+        <AlertDialogAction onClick={handleReplace} disabled={deleting} className='bg-red-500 hover:bg-red-600 disabled:opacity-50'>
+          {deleting ? <><Spinner className="w-4 h-4 mr-2" />Deleting...</> : "Confirm"}
+        </AlertDialogAction>
       </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

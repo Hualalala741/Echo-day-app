@@ -174,7 +174,7 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 text-slate-400 hover:text-slate-600"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted"
             onClick={() => setStartDate(undefined)}
           >
             <X className="h-4 w-4" />
@@ -184,8 +184,8 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
       {/* 日期浮标 */}
       {!filterVisible&&floatingDate && !isLoading && (
         <div className="fixed top-[68px] left-6 md:left-10 lg:left-20 z-20">
-        <span className='inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-600 font-medium shadow-sm'>
-            <CalendarIcon className="size-4 text-slate-400" />
+        <span className='inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground font-medium shadow-sm'>
+            <CalendarIcon className="size-4 text-foreground/70" />
             {floatingDate?.slice(0, 10)}
           </span>
         </div>
@@ -198,11 +198,11 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex gap-4 items-start animate-pulse">
-              <div className="w-10 h-10 rounded-full bg-slate-200 shrink-0" />
-              <div className="flex-1 bg-white rounded-2xl border m-2 border-slate-100 p-4 space-y-3">
-                <div className="h-4 bg-slate-100 mb-2 rounded w-2/3" />
-                <div className="h-3 bg-slate-100 mb-2 rounded w-full" />
-                <div className="h-3 bg-slate-100 mb-2 rounded w-4/5" />
+              <div className="w-10 h-10 rounded-full bg-muted shrink-0" />
+              <div className="flex-1 bg-card rounded-2xl border m-2 border-border p-4 space-y-3">
+                <div className="h-4 bg-muted mb-2 rounded w-2/3" />
+                <div className="h-3 bg-muted mb-2 rounded w-full" />
+                <div className="h-3 bg-muted mb-2 rounded w-4/5" />
               </div>
             </div>
           ))}
@@ -211,7 +211,7 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
 
        {/* 空状态 */}
        {!isLoading && entries.length === 0 && (
-        <div className="py-20 text-center text-sm text-slate-400">
+        <div className="py-20 text-center text-sm text-muted-foreground">
             No diary entries
         </div>
        )}
@@ -219,7 +219,7 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
 
 
       {/* Vertical line */}
-      <div className="w-px bg-slate-200" />
+      <div className="w-px bg-muted" />
 
       <div className="space-y-5">
         {entries.map((entry, idx) => (
@@ -244,20 +244,19 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
       <div ref={sentinelRef} style={{ height: 1 }} />
       {/* 到底了 */}
       {!hasNextPage && entries.length > 0 &&(
-        <div className="py-4 text-center text-sm text-slate-400">
+        <div className="py-4 text-center text-sm text-muted-foreground">
           --- That&apos;s all ---
         </div>
       )}
+
       {/* 回到顶部 */}
       {showTop &&
       <Button
         onClick={()=>window.scrollTo({top:0, behavior:'smooth'})}
-        className="fixed bottom-10 right-10 rounded-full bg-white shadow-sm hover:bg-slate-50">
-          <ArrowUpIcon className="size-4 text-[#0f58bd]" />
+        className="fixed bottom-10 right-5 rounded-2xl border w-10 h-10 border-border bg-brand text-brand-foreground shadow-sm hover:bg-muted">
+          <ArrowUpIcon className="size-4" />
       </Button>
       }
-      
-
       
     </div>
   );

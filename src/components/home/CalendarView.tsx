@@ -10,6 +10,8 @@ interface Props {
   month: number; // 1-indexed
 }
 
+const PRIMARY = "#0f58bd";
+
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function CalendarView({ entries, year, month }: Props) {
@@ -39,11 +41,11 @@ export default function CalendarView({ entries, year, month }: Props) {
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+    <div className="bg-card rounded-2xl border border-border  shadow-sm">
       {/* Day header */}
-      <div className="grid grid-cols-7 border-b border-slate-100">
+      <div className="grid grid-cols-7 border-b border-border bg-brand/30 rounded-t-2xl">
         {DAY_LABELS.map((d) => (
-          <div key={d} className="py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wide">
+          <div key={d} className="py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wide">
             {d}
           </div>
         ))}
@@ -60,11 +62,11 @@ export default function CalendarView({ entries, year, month }: Props) {
               key={idx}
               onClick={() => entry && router.push(`/diary/${entry.id}`)}
               className={`
-                relative min-h-[90px] max-h-[120px] p-2 border-b border-r border-slate-50
+                relative min-h-[90px] max-h-[120px] p-2 border-b border-r border-border
                 flex flex-col items-center
                 ${entry ? "cursor-pointer group" : ""}
-                ${!day ? "bg-slate-50/50" : ""}
               `}
+              style={{ backgroundColor:(entry?.moodColorHex)+"33", }}
             >
               {day && (
                 <>
@@ -73,8 +75,8 @@ export default function CalendarView({ entries, year, month }: Props) {
                     className={`
                       w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium
                       ${isToday
-                        ? "bg-indigo-600 text-white"
-                        : "text-slate-600"
+                        ? "bg-brand text-brand-foreground"
+                        : "text-muted-foreground"
                       }
                     `}
                   >
@@ -94,12 +96,12 @@ export default function CalendarView({ entries, year, month }: Props) {
                   {entry && (
                     <div className="
                       absolute bottom-full left-1/2 -translate-x-1/2 z-[102] w-52
-                      bg-white rounded-xl shadow-xl border border-slate-100
+                      bg-card rounded-xl shadow-xl border border-border
                       opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100
                       transition-all duration-150 pointer-events-none overflow-hidden
                     ">
                       {/* Photo */}
-                      <div className="h-25 bg-slate-100 overflow-hidden">
+                      <div className="h-25 bg-muted overflow-hidden">
                         <img
                           src={entry.photoUrl}
                           alt=""
@@ -118,13 +120,13 @@ export default function CalendarView({ entries, year, month }: Props) {
                           />
                           )}
                           {entry.emotionLabel && (
-                            <span className="text-xs font-medium text-slate-600">
+                            <span className="text-xs font-medium text-muted-foreground">
                               {entry.emotionLabel}
                             </span>
                           )}
                         </div>
                         {entry.diaryText && (
-                          <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">
+                          <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                             {entry.diaryText}
                           </p>
                         )}
@@ -140,7 +142,7 @@ export default function CalendarView({ entries, year, month }: Props) {
 
       {/* Empty state */}
       {entries.length === 0 && (
-        <div className="py-12 text-center text-sm text-slate-400">
+        <div className="py-12 text-center text-sm text-muted-foreground">
           No entries this month yet.
         </div>
       )}

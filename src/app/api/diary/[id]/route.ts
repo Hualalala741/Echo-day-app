@@ -63,7 +63,11 @@ export async function DELETE(
       { status: 500 });
   }
 
-  await prisma.diaryEntry.delete({ where: { id } });
+  try {
+    await prisma.diaryEntry.delete({ where: { id } });
+  } catch {
+    return NextResponse.json({ error: "Record already deleted" }, { status: 404 });
+  }
   revalidatePath("/home");
   return NextResponse.json({ ok: true });
 }

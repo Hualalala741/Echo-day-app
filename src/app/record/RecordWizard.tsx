@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { X, CheckCircle, Mic } from "lucide-react";
+import { X, CheckCircle, Mic, Moon, Sun } from "lucide-react";
 import Step1Photo from "./Step1Photo";
 import Step3Review from "./Step3Review";
 import Step2Voice2 from "./Step2Voice2";
+import { useThemeStore } from "@/store/useThemeStore";
 
 export interface Message {
   role: "user" | "assistant";
@@ -71,6 +72,7 @@ export default function RecordWizard({ userId, userImage, userPreferredLang, exi
   const initialStep = Math.min(existingDraft?.currentStep ?? 0, 2);
   const [step, setStep] = useState(initialStep);
   const [aiLang, setAiLang] = useState(userPreferredLang ?? 'en');
+  const {theme, toggleTheme} = useThemeStore();
   const [draft, setDraft] = useState<Draft | null>(
     existingDraft
       ? {
@@ -175,12 +177,20 @@ export default function RecordWizard({ userId, userImage, userPreferredLang, exi
           <Mic className="w-6 h-6" style={{ color: "#0f58bd" }} />
           <h2 className="text-lg font-bold text-slate-900 tracking-tight">Echo Day</h2>
         </div>
+        <div className="flex items-center gap-2">
+        <button
+            onClick={toggleTheme}
+            className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+          >
+            {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          </button>
         <button
           onClick={handleClose}
           className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
+        </div>
       </header>
 
       <main className="max-w-6xl mx-auto w-full px-6 py-8 flex-1">
