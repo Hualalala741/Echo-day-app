@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { ImagePlus, X, Upload } from "lucide-react";
 import type { Draft } from "./RecordWizard";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Props {
   userId: string;
@@ -82,8 +83,8 @@ export default function Step1Photo({ existingPhotoUrl, existingDraftId, onComple
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">Step 1: Photo Upload</h1>
-        <p className="text-slate-500 text-lg">Choose a photo that represents your day.</p>
+        <h1 className="text-3xl md:text-4xl font-black text-foreground mb-2">Step 1: Photo Upload</h1>
+        <p className="text-muted-foreground text-lg">Choose a photo that represents your day.</p>
       </div>
 
       <div className="max-w-lg">
@@ -94,7 +95,7 @@ export default function Step1Photo({ existingPhotoUrl, existingDraftId, onComple
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           className={`relative rounded-xl border-2 border-dashed overflow-hidden transition-colors ${
-            preview ? "border-transparent cursor-default" : "border-slate-300 hover:border-[#0f58bd] cursor-pointer bg-white"
+            preview ? "border-transparent cursor-default" : "border-border hover:border-brand cursor-pointer bg-card"
           }`}
           style={{ minHeight: 300 }}
         >
@@ -110,18 +111,18 @@ export default function Step1Photo({ existingPhotoUrl, existingDraftId, onComple
               </div>
               <button
                 onClick={(e)=>{e.stopPropagation();clearPhoto()}}
-                className="absolute top-3 right-3 bg-white/80 rounded-lg p-1 text-[#0f58bd] hover:bg-slate-300 transition-color">
+                className="absolute top-3 right-3 bg-card/80 rounded-lg p-1 text-brand hover:bg-background hover:text-foreground transition-color">
                   <X className="w-4 h-4" />
               </button>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 py-20 px-8 text-center">
-              <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
-                <ImagePlus className="w-7 h-7" style={{ color: "#0f58bd" }} />
+              <div className="w-14 h-14 rounded-full bg-brand/10 flex items-center justify-center">
+                <ImagePlus className="w-7 h-7 text-brand" />
               </div>
               <div>
-                <p className="font-semibold text-slate-700">Drop a photo here</p>
-                <p className="text-sm text-slate-400 mt-1">or click to browse</p>
+                <p className="font-semibold text-foreground">Drop a photo here</p>
+                <p className="text-sm text-muted-foreground mt-1">or click to browse</p>
               </div>
             </div>
           )}
@@ -135,11 +136,10 @@ export default function Step1Photo({ existingPhotoUrl, existingDraftId, onComple
           <button
             onClick={preview ? handleUpload : () => inputRef.current?.click()}
             disabled={uploading}
-            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-white text-sm font-bold transition-opacity disabled:opacity-60"
-            style={{ backgroundColor: "#0f58bd" }}
+            className="flex-1 flex items-center justify-center bg-brand gap-2 h-11 rounded-xl text-brand-foreground text-sm font-bold transition-opacity disabled:opacity-60"
           >
             {uploading ? (
-              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              <Spinner className="w-4 h-4" />
             ) : (
               <Upload className="w-4 h-4" />
             )}

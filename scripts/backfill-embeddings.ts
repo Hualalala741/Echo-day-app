@@ -2,17 +2,10 @@ import {prisma} from "@/lib/prisma";
 import { getEmbedding } from "@/lib/openai";
 
 async function main() {
-  const entries = await prisma.diaryEntry.findMany({
-    where: {
-      status:"COMPLETE",
-      diaryText: {
-        not: null,
-      },
-      embedding: null,
-    },
-    select:{id:true, diaryText:true},
-  });
-  console.log(`Found ${entries.length} entries to backfill`);
+  const entries = await prisma.$queryRaw<{id: string; diaryText: string}[]>`
+    SELECT "id", "diaryText" FROM "DiaryEntry"
+    WHERE "status" = 'COMPLETE' AND "diaryText" IS NOT NULL AND "embedding" IS NULL
+  `;
 
   for(const entry of entries) {
     try {
@@ -26,7 +19,6 @@ async function main() {
       console.error(`✗ ${entry.id}: ${error}`);
     }
   }
-  console.log("Done");
   await prisma.$disconnect();
 }
 

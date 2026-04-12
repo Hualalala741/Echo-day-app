@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { EntryPreview } from "@/app/home/HomeClient";
-import { MOODS } from "@/lib/mood-map";
+import { MOODS, type MoodKey } from "@/lib/mood-map";
 
 interface Props {
   entries: EntryPreview[];
@@ -86,7 +86,7 @@ export default function CalendarView({ entries, year, month }: Props) {
                   {/* Mood emoji */}
                   {entry?.moodEmoji && (
                     <img
-                      src={MOODS[entry.moodEmoji].icon}
+                      src={MOODS[entry.moodEmoji as MoodKey].icon}
                       alt={entry.moodEmoji}
                       className="flex-1 max-h-[70%] min-h-0 w-auto object-contain"
                     />
@@ -114,7 +114,7 @@ export default function CalendarView({ entries, year, month }: Props) {
                         <div className="flex items-center gap-1.5 mb-1">
                           {entry.moodEmoji && (
                             <img
-                            src={MOODS[entry.moodEmoji].icon}
+                            src={MOODS[entry.moodEmoji as MoodKey].icon}
                             alt={entry.moodEmoji}
                             className="w-10 h-10"
                           />

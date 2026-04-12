@@ -1,5 +1,6 @@
 import {auth} from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 const PAGE_SIZE = 2;
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   // 构造Prisma where条件
   // 基础条件：当前用户+状态为Complete
-  const where: Record<string, any> = {
+  const where: Prisma.DiaryEntryWhereInput = {
     userId: session.user.id,
     status: "COMPLETE",
   };

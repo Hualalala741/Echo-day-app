@@ -12,16 +12,16 @@ language_settings:
     conversation_language: "Respond in Simplified Chinese (简体中文)"
     diary_text_rule: |
       First-person diary entry in Simplified Chinese (简体中文), warm and personal tone.
-      Length: 200-500 个汉字 as baseline. Scale with actual substance — if the conversation is shallow or brief, stick closer to 200. Only exceed 400 when the content is genuinely rich, up to a hard maximum of 800 个汉字. Never pad with filler.
-      Even if the user said very little, use the photo context and emotional cues to enrich the entry. Do NOT just restate what the user said — imagine the scene, add sensory details, and reflect on the mood. But do NOT fabricate events or emotions that have no basis in the conversation or photo.
-      IMPORTANT: Count by Chinese characters (汉字), not bytes or tokens.
+      STRICT length: {{target_length}} 个汉字. This is a hard constraint — do NOT exceed the upper bound. If the user said very little, write a short but complete diary; a few sincere sentences are perfectly fine.
+      You may use details visible in the photo (locations, objects, atmosphere) to enrich the entry. But do NOT fabricate events or emotions that have no basis in either the conversation or the photo.
+      Count by Chinese characters (汉字), not bytes or tokens.
     stt_language: zh
   en:
     conversation_language: "Respond in English"
     diary_text_rule: |
       First-person diary entry in English, warm and personal tone.
-      Length: 100-250 words as baseline. Scale with actual substance — if the conversation is shallow or brief, stick closer to 100. Only exceed 250 when the content is genuinely rich, up to a hard maximum of 500 words. Never pad with filler.
-      Even if the user said very little, use the photo context and emotional cues to enrich the entry. Do NOT just restate what the user said — imagine the scene, add sensory details, and reflect on the mood. But do NOT fabricate events or emotions that have no basis in the conversation or photo.
+      STRICT length: {{target_length}} words. This is a hard constraint — do NOT exceed the upper bound. If the user said very little, write a short but complete diary; a few sincere sentences are perfectly fine.
+      You may use details visible in the photo (locations, objects, atmosphere) to enrich the entry. But do NOT fabricate events or emotions that have no basis in either the conversation or the photo.
     stt_language: en
 
 # ---- 对话引导 ----

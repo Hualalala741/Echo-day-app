@@ -14,7 +14,7 @@ type PromptsYaml = {
 let _config: PromptsYaml | null = null;
 
 export function getRawConfig(): PromptsYaml {
-  if (!_config) {
+  if (!_config || process.env.NODE_ENV === "development") {
     const filePath = path.join(process.cwd(), "prompts.yml");
     const file = fs.readFileSync(filePath, "utf8");
     _config = yaml.load(file) as PromptsYaml;
@@ -22,10 +22,16 @@ export function getRawConfig(): PromptsYaml {
   return _config;
 }
 
-// 替换语言
-function resolvePrompt(prompt: string, lang: string) {
+function resolvePrompt(
+  prompt: string,
+  lang: string,
+  extraVars?: Record<string, string>
+) {
   const config = getRawConfig();
-  const vars = config.language_settings[lang];
+  const vars: Record<string, string> = {
+    ...config.language_settings[lang],
+    ...extraVars,
+  };
   return prompt.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
 }
 
@@ -38,11 +44,18 @@ export function getConversationConfig(lang: string) {
   };
 }
 
-export function getDiaryConfig(lang: string) {
+export function getDiaryConfig(
+  lang: string,
+  extraVars?: Record<string, string>
+) {
   const config = getRawConfig();
   return {
     ...config.diary_generation,
-    system_prompt: resolvePrompt(config.diary_generation.system_prompt, lang),
+    system_prompt: resolvePrompt(
+      config.diary_generation.system_prompt,
+      lang,
+      extraVars
+    ),
   };
 }
 

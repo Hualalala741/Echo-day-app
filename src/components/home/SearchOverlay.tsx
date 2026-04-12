@@ -3,10 +3,8 @@
 import {useState, useRef, useCallback, useEffect} from "react";
 import { Loader2, Search, X } from "lucide-react";
 import DiaryCard from "@/components/home/DiaryCard";
-import type { EntryPreview } from "@/app/home/HomeClient";
 import { useSearchStore } from "@/store/useSearchStore";
 
-const PRIMARY = "#0f58bd";
 
 export default function SearchOverlay() {
   const {open, setOpen} = useSearchStore();
@@ -91,7 +89,7 @@ export default function SearchOverlay() {
         inputRef.current?.blur();
         clearTimeout(debounceRef.current);
       }
-    } className="text-slate-400 hover:text-slate-600">
+    } className="text-muted-foreground hover:text-foreground hover:bg-muted">
       <X className="w-4 h-4" />
     </button>
   )}
@@ -103,18 +101,17 @@ export default function SearchOverlay() {
       className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center">
         {/* 搜索面板 */}
         {/* 结果面板-阻止点击冒泡 */}
-        <div className="absolute top-[10%] w-full sm:max-w-md md:max-w-lg lg:max-w-2xl bg-white rounded-xl shadow-lg p-4 overflow-y-auto max-h-[88%]"
+        <div className="absolute top-[10%] w-full sm:max-w-md md:max-w-lg lg:max-w-2xl bg-background rounded-xl shadow-lg p-4 overflow-y-auto max-h-[88%]"
           onClick={(e) => e.stopPropagation()}>
         {/* 搜索结果 */}
-        <div>
           {loading && (
-            <div>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Searching...
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              Searching memories...
             </div>
           )}
           {!loading && query.trim() && results.length === 0 && (
-            <div>
+            <div className="flex items-center justify-center gap-2">
               <p>No diaries found</p>
             </div>
           )}
@@ -124,8 +121,7 @@ export default function SearchOverlay() {
                 <DiaryCard key={entry.id} entry={entry} />
               ))}
             </div>
-          )}
-        </div>
+            )}
       </div>
     </div>
     )}

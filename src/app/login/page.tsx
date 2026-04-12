@@ -169,7 +169,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading || !email || !password}
-            className="w-full h-12 rounded-xl bg-[#0d4a9f] text-sm font-semibold text-white hover:bg-[#0f58bd]/80 active:bg-[#0f58bd]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center w-full h-12 rounded-xl bg-[#0d4a9f] text-sm font-semibold text-white hover:bg-[#0f58bd]/80 active:bg-[#0f58bd]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 
               mode === "login" ? "Sign In" : "Create Account"}

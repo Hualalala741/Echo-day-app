@@ -123,6 +123,15 @@
 }
 
 @layer base {
+  @keyframes waveform {
+    0%, 100% {
+      transform: scaleY(0.3);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

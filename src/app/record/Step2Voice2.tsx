@@ -3,7 +3,7 @@ import { useLocalRuntime, AssistantRuntimeProvider, type ChatModelAdapter, type 
 import {Thread} from "@/components/assistant-ui/thread";
 import { useState, useRef, useEffect } from "react";
 import { Draft } from "./RecordWizard";
-import { ArrowLeft, CheckCircle, Languages, Mic, MicOff } from "lucide-react";
+import { ArrowLeft, CheckCircle, Languages, Mic, MicOff, Volume2 } from "lucide-react";
 import {
   Select,
   SelectTrigger,
@@ -270,22 +270,22 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
       <button
         type='button'
         onClick={()=>{onBack();releaseMedia();}}
-        className='flex items-center gap-2 text-lg font-semibold text-slate-600 hover:text-[#0f58bd] transition-colors'>
-          <ArrowLeft className="w-4 h-4" />
+        className='flex items-center gap-2 text-lg font-semibold text-muted-foreground hover:text-brand transition-colors'>
+          <ArrowLeft className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           Back to Photo
        </button>
       <div className="mb-8 mt-4">
-        <h1 className="text-3xl mb-2 md:text-4xl font-black text-slate-900 mb-2">
+        <h1 className="text-3xl mb-2 md:text-4xl font-black text-foreground mb-2">
           Step 2: AI Voice Chat
         </h1>
         <div className="flex">
-        <p className="text-slate-500 text-lg">
+        <p className="text-muted-foreground text-lg">
           Tell Echo about this moment. It&apos;s listening to your story.
         </p>
         {/* 语言切换 */}
         <div className="flex items-center gap-2 ml-auto">
-          <Languages className="w-4 h-4 text-slate-500"/>
-          <span className="text-xs text-slate-500">Model Language</span>
+          <Languages className="w-4 h-4 text-muted-foreground"/>
+          <span className="text-xs text-muted-foreground">Model Language</span>
           <Select value={aiLang} onValueChange={(value)=>onLangChange(value as AiLang)}>
             <SelectTrigger size="sm" className="w-[180px]">
               <SelectValue>{aiLang === "zh" ? "Chinese" : "English"}</SelectValue>
@@ -306,20 +306,20 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* 左：照片 */}
         <div className="space-y-4">
-          <div className="rounded-xl bg-white p-2 shadow-sm border border-slate-200">
+          <div className="rounded-xl bg-card p-2 shadow-sm border border-border">
             <div className="h-[384px] w-full rounded-lg bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: `url(${draft.photoUrl})` }} />
           </div>
         <div className="flex items-center gap-2 px-2 mt-2">
-          <span className="text-slate-400 text-sm">📷</span>
-          <p className="text-sm text-slate-500 italic">Today&apos;s Photo</p>
+          <span className="text-muted-foreground text-sm">📷</span>
+          <p className="text-sm text-muted-foreground italic">Today&apos;s Photo</p>
         </div>
         </div>
 
       {/* 右：语音界面 */}
       <div className="flex flex-col gap-6">
         {/* 语音对话界面 */}
-        <div className="h-[400px] bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="h-[400px] bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <AssistantRuntimeProvider runtime={runtime}>
             <Thread />
           </AssistantRuntimeProvider>
@@ -330,8 +330,12 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
           <button
             type='button'
             onClick={toggleMute}
-            className="flex flex1 items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl hover:bg-slate-50 transition-all shadow-sm text-sm active:scale-95">
-            <MicOff className="w-5 h-5" />
+            className={`flex flex-1 items-center justify-center gap-2 font-bold py-3 px-4 rounded-xl transition-all shadow-sm text-sm active:scale-95 ${
+              isMuted
+                ? "bg-red-500/15 border border-red-500/40 text-red-600 dark:text-red-400 hover:bg-red-500/25"
+                : "bg-card border border-border text-foreground hover:bg-muted"
+            }`}>
+            {isMuted ? <MicOff className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
             {isMuted ? "Unmute" : "Mute"}
           </button>
           {/* 录音button */}
@@ -339,10 +343,9 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
             type='button'
             onClick={handleMicClick}
             disabled={isProcessing}
-            className={`flex-[1.5] flex items-center justify-center gap-2 font-bold py-3 px-4 rounded-xl transition-all text-sm text-white disabled:opacity-50 active:scale-95 hover:brightness-110 ${
-              isRecording ? "bg-red-500 hover:bg-red-600" : ""
-            }`}
-            style={!isRecording ? { backgroundColor: "#0f58bd" } : {}}>
+            className={`flex-[1.5] flex items-center justify-center gap-2 font-bold py-3 px-4 rounded-xl transition-all text-sm text-brand-foreground disabled:opacity-50 active:scale-95 hover:brightness-110 ${
+              isRecording ? "bg-red-500 hover:bg-red-600" : "bg-brand"
+            }`}>
             <Mic className="w-5 h-5" />
             {isRecording ? "Stop": isProcessing ? "Processing…" : "Speak"} 
           </button>
@@ -350,9 +353,8 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
           <button
             type='button'
             onClick={handleFinishConversation}
-            // disabled={runtime.thread.getState().messages.length ===0}
-            className="flex-[1.5] flex items-center justify-center gap-2 font-bold py-3 px-4 rounded-xl transition-all text-sm text-white disabled:opacity-40 shadow-sm active:scale-95 hover:brightness-110"
-            style={{ backgroundColor: "#0f58bd", boxShadow: "0 4px 14px rgba(15,88,189,0.2)" }}
+            disabled={runtime.thread.getState().messages.length === 0 && !initalMessages?.length}
+            className="flex-[1.5] flex items-center justify-center gap-2 bg-brand text-brand-foreground font-bold py-3 px-4 rounded-xl transition-all text-sm disabled:opacity-40 shadow-sm active:scale-95 hover:brightness-110"
           >
             <CheckCircle className="w-5 h-5" />
             Finish

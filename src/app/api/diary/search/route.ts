@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       WHERE "userId" = $1
         AND status = 'COMPLETE'
         AND embedding IS NOT NULL
-        AND 1-(embedding::vector <=> ${vectorLiteral})>= 0.4
+        AND 1-(embedding::vector <=> ${vectorLiteral})>= 0.35
       ORDER BY embedding::vector <=> ${vectorLiteral}
       LIMIT 20
     `, session.user.id);

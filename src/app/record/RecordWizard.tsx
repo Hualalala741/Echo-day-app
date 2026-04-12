@@ -170,23 +170,23 @@ export default function RecordWizard({ userId, userImage, userPreferredLang, exi
   }, [draft, step]);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#f6f7f8" }}>
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 md:px-10 py-3 flex items-center justify-between">
+      <header className="bg-card border-b border-border px-6 md:px-10 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Mic className="w-6 h-6" style={{ color: "#0f58bd" }} />
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight">Echo Day</h2>
+          <Mic className="w-6 h-6 text-brand"/>
+          <h2 className="text-lg font-bold text-foreground tracking-tight">Echo Day</h2>
         </div>
         <div className="flex items-center gap-2">
         <button
             onClick={toggleTheme}
-            className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
           >
             {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </button>
         <button
           onClick={handleClose}
-          className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+          className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -207,7 +207,7 @@ export default function RecordWizard({ userId, userImage, userPreferredLang, exi
                   }`}
                   style={active ? { color: "#0f58bd" } : {}}
                 >
-                  {done && <CheckCircle className="w-4 h-4" style={{ color: "#0f58bd" }} />}
+                  {done && <CheckCircle className="w-4 h-4 text-brand"/>}
                   {label}
                 </span>
                 {i < STEPS.length - 1 && (

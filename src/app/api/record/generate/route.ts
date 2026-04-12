@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getMood } from "@/lib/mood-map";
 import { getDiaryConfig } from "@/lib/prompts";
 import { resolveTranscriptFromBody } from "@/lib/conversation-transcript";
+import { estimateDiaryLength } from "@/lib/diary-length";
 
 
 export async function POST(req: NextRequest) {
@@ -32,6 +33,12 @@ export async function POST(req: NextRequest) {
   });
   if (!draft) return new Response("Not found", { status: 404 });
 
+  const convMessages = Array.isArray(body.conversationMessages)
+    ? (body.conversationMessages as { role: string; content: string }[])
+    : [];
+  const lengthRange = estimateDiaryLength(convMessages, aiLang);
+  const targetLength = `${lengthRange.min}–${lengthRange.max}`;
+
   const userContent: OpenAI.Chat.ChatCompletionContentPart[] = [
     { type: "image_url", image_url: { url: draft.photoUrl, detail: "low" } },
     {
@@ -40,10 +47,12 @@ export async function POST(req: NextRequest) {
     },
   ];
 
+  const diaryConfig = getDiaryConfig(aiLang, { target_length: targetLength });
+
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
-      { role: "system", content: getDiaryConfig(aiLang).system_prompt },
+      { role: "system", content: diaryConfig.system_prompt },
       { role: "user", content: userContent },
     ],
     response_format: { type: "json_object" },

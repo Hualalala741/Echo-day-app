@@ -22,7 +22,7 @@ import {
 } from "@assistant-ui/react";
 import {
   ArrowDownIcon,
-  ArrowUpIcon,
+  CornerDownLeftIcon,
   CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -97,7 +97,7 @@ const ThreadWelcome: FC = () => {
             Hello there!
           </h1>
           <p className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-muted-foreground text-xl delay-75 duration-200">
-            How can I help you today?
+            Tell me about your day. I&apos;m listening.
           </p>
         </div>
       </div>
@@ -132,9 +132,10 @@ const ThreadSuggestionItem: FC = () => {
   );
 };
 
+// 输入框
 const Composer: FC = () => {
   return (
-    <ComposerPrimitive.Root className="aui-composer-root relative flex w-full gap-2">
+    <ComposerPrimitive.Root className="aui-composer-root relative flex items-center w-full gap-2">
       <ComposerPrimitive.Input
         placeholder="Type a message…"
         className="aui-composer-input min-h-8 max-h-28 w-full resize-none bg-transparent text-sm outline-none placeholder:text-slate-400 border border-slate-200 rounded-lg p-2"
@@ -142,7 +143,7 @@ const Composer: FC = () => {
         autoFocus
         aria-label="Message input"
       />
-      <div className="flex items-center justify-center border border-slate-200 rounded-lg p-2 hover:bg-slate-50 transition-all active: scale-95">
+      <div className="flex items-center justify-center border border-border rounded-lg p-2 hover:bg-muted transition-all active: scale-95">
       <AuiIf condition={(s) => !s.thread.isRunning}>
       <ComposerPrimitive.Send asChild>
           <TooltipIconButton
@@ -151,10 +152,10 @@ const Composer: FC = () => {
             type="button"
             variant="default"
             size="icon"
-            className="aui-composer-send size-8 shrink-0 rounded-full"
+            className="aui-composer-send size-6 shrink-0 rounded-full"
             aria-label="Send message"
           >
-            <ArrowUpIcon className="size-4" />
+            <CornerDownLeftIcon className="size-3" />
           </TooltipIconButton>
         </ComposerPrimitive.Send>
       </AuiIf>
@@ -193,7 +194,7 @@ const ComposerAction: FC = () => {
             className="aui-composer-send size-8 rounded-full"
             aria-label="Send message"
           >
-            <ArrowUpIcon className="aui-composer-send-icon size-4" />
+            <CornerDownLeftIcon className="aui-composer-send-icon size-4" />
           </TooltipIconButton>
         </ComposerPrimitive.Send>
       </AuiIf>
@@ -232,15 +233,14 @@ const AssistantMessage: FC = () => {
     >
       <div className="flex gap-1">
 {/* 头像 */}
-      {/* <div
-          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold mt-0.5"
-          style={{ backgroundColor: "#dbeafe", color: "#0f58bd" }}
+      <div
+          className="w-8 h-8 rounded-full bg-brand/15 text-brand flex items-center justify-center shrink-0 text-sm font-bold mt-0.5"
         >
           E
-      </div> */}
+      </div>
       {/* 气泡 */}
       <div className="flex flex-col gap-1 min-w-0">
-          <div className="bg-slate-100 rounded-2xl rounded-tl-none px-4 py-3 text-sm text-slate-700 leading-relaxed wrap-break-word">
+          <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-3 text-sm text-foreground leading-relaxed wrap-break-word">
             <MessagePrimitive.Parts />
           </div>
           {/* <AssistantActionBar /> */}

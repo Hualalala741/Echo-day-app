@@ -1,10 +1,40 @@
 "use client";
 
-import { useState, useRef, useEffect ,useCallback} from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Pencil, X, Check, Play, Pause, Music2, ChevronDown, Trash } from "lucide-react";
-import { MOODS } from "@/lib/mood-map";
+import { ArrowLeft, Pencil, X, Check, ChevronDown, Trash } from "lucide-react";
+import { MOODS, type MoodKey } from "@/lib/mood-map";
+
+function findMoodKey(raw: string): MoodKey {
+  if (raw in MOODS) return raw as MoodKey;
+  const lower = raw.toLowerCase();
+  if (lower in MOODS) return lower as MoodKey;
+  const byLabel = (Object.entries(MOODS) as [MoodKey, (typeof MOODS)[MoodKey]][]).find(
+    ([, v]) => v.label.toLowerCase() === lower,
+  );
+  return byLabel?.[0] ?? "neutral";
+}
 import Script from "next/script";
+
+interface SpotifyController {
+  togglePlay: () => void;
+  destroy: () => void;
+}
+
+interface SpotifyIFrameAPI {
+  createController: (
+    el: HTMLElement,
+    options: { uri: string; height: number },
+    callback: (controller: SpotifyController) => void,
+  ) => void;
+}
+
+declare global {
+  interface Window {
+    __spotifyIFrameAPI?: SpotifyIFrameAPI;
+    onSpotifyIframeApiReady?: (api: SpotifyIFrameAPI) => void;
+  }
+}
 
 interface Entry {
   id: string;
@@ -39,71 +69,62 @@ export default function DiaryClient({ entry, isNew }: Props) {
   const [showMask, setShowMask] = useState(!isNew);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(entry.diaryText);
-  const [editMood, setEditMood] = useState({ emoji: entry.moodEmoji, label: entry.emotionLabel, colorHex: entry.moodColorHex });
+  const [editMood, setEditMood] = useState({ emoji: findMoodKey(entry.moodEmoji), label: entry.emotionLabel, colorHex: entry.moodColorHex });
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
     // Music player
-  const embedRef = useRef<any>(null);
+  const embedRef = useRef<SpotifyController | null>(null);
   const spotifyEmbedRef = useRef<HTMLDivElement|null>(null);
 
-  function initEmbed(IFrameAPI: any) {
-    console.log("initEmbed called", {
-      el: !!spotifyEmbedRef.current,
-      alreadyCreated: !!embedRef.current,
-      trackId: entry.spotifyTrackId,
-    });
+  function initEmbed(IFrameAPI: SpotifyIFrameAPI) {
     if(!spotifyEmbedRef.current|| embedRef.current) return;
-    // 确保 DOM 节点还在文档里
-  if (!document.contains(spotifyEmbedRef.current)) return;
-  console.log("initEmbed creating controller");
+    if (!document.contains(spotifyEmbedRef.current)) return;
+
     IFrameAPI.createController(
       spotifyEmbedRef.current,
       {uri: `spotify:track:${entry.spotifyTrackId}`,height: 152},
-      (controller: any)=>{
-        console.log("controller created!", controller);
+      (controller: SpotifyController)=>{
         embedRef.current = controller;
       }
     )
   }
-  // callback ref: Dom挂载时，如果API已经加载就立即创建
-  const spotifyRefCb = useCallback((el: HTMLDivElement|null) => {
-    console.log("spotifyRefCb", { el: !!el, apiCached: !!(window as any).__spotifyIFrameAPI });
-    // 卸载时清理
-  if (!el) {
-    embedRef.current?.destroy?.();
-    embedRef.current = null;
-    spotifyEmbedRef.current = null;
-    return;
-  }
-    
-    spotifyEmbedRef.current = el;
-    if (embedRef.current) return;// 已有 controller，不重复创建
 
-    const api = (window as any).__spotifyIFrameAPI;
+  const spotifyRefCb = useCallback((el: HTMLDivElement|null) => {
+    console.log("spotifyRefCb", { el: !!el, apiCached: !!window.__spotifyIFrameAPI });
+    if (!el) {
+      embedRef.current?.destroy?.();
+      embedRef.current = null;
+      spotifyEmbedRef.current = null;
+      return;
+    }
+
+    spotifyEmbedRef.current = el;
+    if (embedRef.current) return;
+
+    const api = window.__spotifyIFrameAPI;
     if (api) {
       initEmbed(api);
     }
-    
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[entry.spotifyTrackId]);
 
   function handleSpotifyScriptLoad() {
     console.log("Script onLoad fired");
 
-  // 情况1: API 我们之前已缓存
-  if ((window as any).__spotifyIFrameAPI) {
-    console.log("API already cached, reusing");
-    initEmbed((window as any).__spotifyIFrameAPI);
-    return;
-  }
+    if (window.__spotifyIFrameAPI) {
+      console.log("API already cached, reusing");
+      initEmbed(window.__spotifyIFrameAPI);
+      return;
+    }
 
-  // 情况2: 首次加载，等回调
-  (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
-    console.log("onSpotifyIframeApiReady fired");
-    (window as any).__spotifyIFrameAPI = IFrameAPI;
-    initEmbed(IFrameAPI);
-  };
+    window.onSpotifyIframeApiReady = (IFrameAPI: SpotifyIFrameAPI) => {
+      console.log("onSpotifyIframeApiReady fired");
+      window.__spotifyIFrameAPI = IFrameAPI;
+      initEmbed(IFrameAPI);
+    };
   }
   
 
@@ -125,7 +146,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
     if (editing && dirty) {
       if (!confirm("Discard unsaved changes?")) return;
       setEditText(entry.diaryText);
-      setEditMood({ emoji: entry.moodEmoji, label: entry.emotionLabel, colorHex: entry.moodColorHex });
+      setEditMood({ emoji: findMoodKey(entry.moodEmoji), label: entry.emotionLabel, colorHex: entry.moodColorHex });
       setDirty(false);
     }
     setEditing((e) => !e);
@@ -156,7 +177,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           diaryText: editText,
-          moodEmoji: editMood.label,
+          moodEmoji: editMood.emoji,
           emotionLabel: editMood.label,
           moodColorHex: editMood.colorHex,
         }),
@@ -178,7 +199,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
   const moodOverlay = `rgba(${r}, ${g}, ${b}, 0.18)`;
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-black">
+    <div className="relative w-full min-h-screen overflow-hidden bg-stone-50 dark:bg-black">
       {/* <audio ref={audioRef} onEnded={() => setIsPlaying(false)} className="hidden" /> */}
       {entry.spotifyTrackId && (
         <Script
@@ -197,7 +218,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
       <div className="absolute inset-0" style={{ backgroundColor: moodOverlay }} />
 
       {/* Bottom gradient for readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/20 to-transparent dark:from-black/80 dark:via-black/20 dark:to-transparent" />
 
       {/* ── INTRO MASK ── */}
       {showMask && (
@@ -205,20 +226,20 @@ export default function DiaryClient({ entry, isNew }: Props) {
           className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-6"
           style={{ backgroundColor: `rgba(${r}, ${g}, ${b}, 0.55)`, backdropFilter: "blur(2px)" }}
         >
-          <div className="text-center text-white">
+          <div className="text-center text-gray-800 dark:text-white">
             <p className="text-sm font-medium uppercase tracking-widest opacity-70 mb-2">
               {formatDate(entry.date)}
             </p>
-            <img src={MOODS[entry.moodEmoji].icon} alt={entry.moodEmoji} className="w-60 h-60" />
+            <img src={MOODS[findMoodKey(entry.moodEmoji)].icon} alt={entry.moodEmoji} className="w-60 h-60" />
             <p className="text-lg font-semibold opacity-90">{entry.emotionLabel}</p>
           </div>
           <button
             onClick={handleEnterDay}
-            className="mt-2 px-8 py-3 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white font-bold text-sm hover:bg-white/30 transition-all"
+            className="mt-2 px-8 py-3 rounded-full bg-black/10 dark:bg-white/20 backdrop-blur-sm border border-black/15 dark:border-white/30 text-gray-800 dark:text-white font-bold text-sm hover:bg-black/20 dark:hover:bg-white/30 transition-all"
           >
             Enter This Day
           </button>
-          <ChevronDown className="w-5 h-5 text-white/50 animate-bounce" />
+          <ChevronDown className="w-5 h-5 text-gray-500 dark:text-white/50 animate-bounce" />
         </div>
       )}
 
@@ -228,7 +249,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
         <div className="flex items-center justify-between pt-2">
           <button
             onClick={handleBack}
-            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors"
+            className="w-10 h-10 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-sm flex items-center justify-center text-gray-700 dark:text-white hover:bg-white/70 dark:hover:bg-black/50 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -238,15 +259,14 @@ export default function DiaryClient({ entry, isNew }: Props) {
               <>
                 <button
                   onClick={handleEditToggle}
-                  className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors"
+                  className="w-10 h-10 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-sm flex items-center justify-center text-gray-700 dark:text-white hover:bg-white/70 dark:hover:bg-black/50 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving || !dirty}
-                  className="flex items-center gap-1.5 px-4 h-10 rounded-full text-white text-sm font-bold disabled:opacity-50 transition-colors"
-                  style={{ backgroundColor: "#0f58bd" }}
+                  className="flex items-center gap-1.5 px-4 h-10 rounded-full text-white text-sm font-bold disabled:opacity-50 transition-colors bg-brand"
                 >
                   {saving ? (
                     <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
@@ -260,13 +280,13 @@ export default function DiaryClient({ entry, isNew }: Props) {
               <>
               <button
                 onClick={handleEditToggle}
-                className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors"
+                className="w-10 h-10 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-sm flex items-center justify-center text-gray-700 dark:text-white hover:bg-white/70 dark:hover:bg-black/50 transition-colors"
               >
                 <Pencil className="w-4 h-4" />
               </button>
               <button
                 onClick={handleDelete}
-                className="w-10 h-10 rounded-full bg-red-500/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-red-500/50 transition-colors"
+                className="w-10 h-10 rounded-full bg-red-500/20 dark:bg-red-500/30 backdrop-blur-sm flex items-center justify-center text-red-600 dark:text-white hover:bg-red-500/30 dark:hover:bg-red-500/50 transition-colors"
               >
                 <Trash className="w-4 h-4" />
               </button> 
@@ -282,27 +302,27 @@ export default function DiaryClient({ entry, isNew }: Props) {
             {/* Mood badge */}
             <button
               onClick={() => editing && setShowMoodPicker((s) => !s)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 ${editing ? "cursor-pointer hover:bg-black/50" : "cursor-default"}`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-sm border border-black/10 dark:border-white/20 ${editing ? "cursor-pointer hover:bg-white/70 dark:hover:bg-black/50" : "cursor-default"}`}
             >
               <img src={MOODS[editMood.emoji].icon} alt={editMood.emoji} className="w-10 h-10" />
-              <span className="text-white text-sm font-medium">{editMood.label}</span>
+              <span className="text-gray-800 dark:text-white text-sm font-medium">{editMood.label}</span>
             </button>
-            <span className="text-white/60 text-sm">{formatDate(entry.date)}</span>
+            <span className="text-gray-500 dark:text-white/60 text-sm">{formatDate(entry.date)}</span>
           </div>
 
           {/* Mood picker */}
           {showMoodPicker && editing && (
-            <div className="grid grid-cols-3 gap-2 bg-black/50 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              {Object.values(MOODS).map((m) => (
+            <div className="grid grid-cols-3 gap-2 bg-white/60 dark:bg-black/50 backdrop-blur-md rounded-2xl p-3 border border-black/10 dark:border-white/10">
+              {(Object.entries(MOODS) as [MoodKey, (typeof MOODS)[MoodKey]][]).map(([key, m]) => (
                 <button
-                  key={m.label}
+                  key={key}
                   onClick={() => {
-                    setEditMood({ emoji: m.label, label: m.label, colorHex: m.colorHex });
+                    setEditMood({ emoji: key, label: m.label, colorHex: m.colorHex });
                     setDirty(true);
                     setShowMoodPicker(false);
                   }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-white text-sm font-medium transition-colors ${
-                    editMood.label === m.label ? "bg-white/20" : "hover:bg-white/10"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-gray-800 dark:text-white text-sm font-medium transition-colors ${
+                    editMood.emoji === key ? "bg-black/10 dark:bg-white/20" : "hover:bg-black/5 dark:hover:bg-white/10"
                   }`}
                 >
                   <img src={m.icon} alt={m.label} className="w-10 h-10" />
@@ -317,11 +337,11 @@ export default function DiaryClient({ entry, isNew }: Props) {
             <textarea
               value={editText}
               onChange={(e) => { setEditText(e.target.value); setDirty(true); }}
-              className="w-full bg-black/30 backdrop-blur-sm rounded-2xl border border-white/20 p-4 text-white text-base leading-relaxed resize-none outline-none placeholder-white/40 min-h-[160px]"
+              className="w-full bg-white/50 dark:bg-black/30 backdrop-blur-sm rounded-2xl border border-black/10 dark:border-white/20 p-4 text-gray-800 dark:text-white text-base leading-relaxed resize-none outline-none placeholder-gray-400 dark:placeholder-white/40 min-h-[160px]"
               placeholder="Write your diary entry…"
             />
           ) : (
-            <p className="text-white text-base leading-relaxed drop-shadow">
+            <p className="text-gray-800 dark:text-white text-base leading-relaxed drop-shadow">
               {editText}
             </p>
           )}

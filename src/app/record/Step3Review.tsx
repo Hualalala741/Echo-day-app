@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Wand2, ArrowLeft, Edit } from "lucide-react";
+import { ArrowLeft, Edit } from "lucide-react";
 import type { Draft, GeneratedContent, Message } from "./RecordWizard";
 import MusicPicker, { type SpotifyTrack } from "@/components/record/MusicPicker";
 import {
@@ -112,7 +112,7 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
       if (e instanceof Error && e.name === "AbortError") return;
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   }
 
@@ -185,7 +185,7 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
       <button
         type="button"
         onClick={() => setBackDialogOpen(true)}
-        className="flex items-center gap-2 text-lg font-semibold text-slate-600 hover:text-[#0f58bd] transition-colors"
+        className="flex items-center gap-2 text-lg font-semibold text-muted-foreground hover:text-brand transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Conversation
@@ -207,7 +207,7 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
                 e.preventDefault();
                 void handleConfirmBack();
               }}
-              className="bg-[#0f58bd] hover:bg-[#0c4a9e]"
+              className="bg-brand hover:bg-brand/90"
             >
               {backPending ? "Processing…" : "Confirm"}
             </AlertDialogAction>
@@ -216,12 +216,12 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
       </AlertDialog>
 
       <div>
-        <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">Step 3: Diary & Music</h1>
-        <p className="text-slate-500 text-lg">Echo will generate your diary. Edit it and confirm today&apos;s song before saving.</p>
+        <h1 className="text-3xl md:text-4xl font-black text-foreground mb-2">Step 3: Diary & Music</h1>
+        <p className="text-muted-foreground text-lg">Echo will generate your diary. Edit it and confirm today&apos;s song before saving.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
-        <div className="rounded-xl bg-white p-2 shadow-sm border border-slate-200">
+        <div className="rounded-xl bg-card p-2 shadow-sm border border-border">
           <div
             className="aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${draft.photoUrl})` }}
@@ -229,23 +229,39 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
         </div>
 
         <div className="flex flex-col gap-4 min-h-0">
-          {loading && (
-            <div className="flex items-center gap-3 text-sm text-slate-500 bg-white rounded-xl p-4 border border-slate-200">
-              <Wand2 className="w-4 h-4 animate-spin" style={{ color: "#0f58bd" }} />
-              Generating your diary…
+
+          <div className="flex flex-col bg-card rounded-xl border border-border shadow-sm overflow-hidden min-h-[320px] lg:min-h-[400px]">
+            <div className="flex items-center px-4 py-3 border-b border-border shrink-0">
+              <Edit className="w-4 h-4 text-brand mr-2" />
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Today&apos;s Diary</span>
+            </div>
+            {loading && !diaryText&& (
+              //  
+            <div className="flex items-center gap-3 bg-card rounded-xl p-4 mt-4">
+              <style>{`
+                @keyframes typing-dot {
+                  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+                  40% { transform: translateY(-6px); opacity: 1; }
+                }
+              `}</style>
+              <div className="flex items-center gap-[5px]">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="w-[7px] h-[7px] rounded-full bg-brand"
+                    style={{
+                      animation: `typing-dot 1.4s ease-in-out ${i * 0.2}s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-muted-foreground">Generating your diary…</span>
             </div>
           )}
-
-          <div className="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[320px] lg:min-h-[400px]">
-            <div className="flex items-center px-4 py-3 border-b border-slate-100 shrink-0">
-              <Edit className="w-4 h-4 text-[#0f58bd] mr-2" />
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Today&apos;s Diary</span>
-            </div>
             <textarea
               value={diaryText}
               onChange={(e) => setDiaryText(e.target.value)}
-              className="flex-1 w-full p-4 text-sm text-slate-700 leading-relaxed resize-none outline-none min-h-[240px] lg:min-h-[300px]"
-              placeholder="Your diary will appear here…"
+              className="flex-1 w-full p-4 text-sm text-foreground leading-relaxed resize-none outline-none bg-card min-h-[240px] lg:min-h-[300px]"
               disabled={loading}
             />
           </div>
@@ -259,7 +275,7 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
                   const c = new AbortController();
                   void generate(c.signal);
                 }}
-                className="ml-2 underline text-[#0f58bd]"
+                className="ml-2 underline text-brand"
               >
                 Regenerate
               </button>
