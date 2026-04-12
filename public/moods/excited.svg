@@ -1,0 +1,14 @@
+<svg width="280" height="280" viewBox="50 50 180 180" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(140 140)">
+  <path fill="#E5C85E" d="M-64,-3 C-61,-35 -39,-58 -6,-63 C28,-68 57,-51 65,-19 C71,6 64,37 44,54 C20,72 -15,71 -40,57 C-61,46 -69,20 -64,-3Z"/>
+  <!-- 眼睛：>< 形 -->
+  <path d="M-26,-8 L-18,-2 L-26,4" stroke="#111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M26,-8 L18,-2 L26,4" stroke="#111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- 腮红 -->
+  <ellipse cx="-36" cy="18" rx="9" ry="5.5" fill="#ee8f98" opacity="0.5"/>
+  <ellipse cx="36" cy="18" rx="9" ry="5.5" fill="#ee8f98" opacity="0.5"/>
+  <!-- 嘴巴：上唇平直，下唇大弧线，整体下移 -->
+  <path d="M-24,24 Q0,22 24,24" stroke="#111" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <path d="M-24,24 Q0,54 24,24" stroke="#111" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+</g>
+</svg>

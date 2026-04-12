@@ -1,0 +1,12 @@
+<svg width="280" height="280" viewBox="50 50 180 180" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(140 140)">
+<path fill="#7E8E9D" d="M-63,-5 C-60,-37 -37,-58 -5,-62 C29,-66 57,-49 64,-18 C70,8 63,39 42,56 C19,72 -16,71 -41,58 C-60,48 -68,21 -63,-5Z"/>
+<!-- 眼睛：眼皮压下来，但开一点 -->
+  <line x1="-30" y1="-4" x2="-18" y2="-4" stroke="#111" stroke-width="5" stroke-linecap="round"/>
+  <line x1="18" y1="-4" x2="30" y2="-4" stroke="#111" stroke-width="5" stroke-linecap="round"/>
+  <!-- 下眼睑 -->
+  <path d="M-30,1 Q-24,4 -18,1" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <path d="M18,1 Q24,4 30,1" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+<line x1="-8" y1="29" x2="8" y2="29" stroke="#111" stroke-width="5.8" stroke-linecap="round"/>
+</g>
+</svg>

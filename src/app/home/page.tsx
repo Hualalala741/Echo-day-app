@@ -60,6 +60,10 @@ export default async function HomePage({ searchParams }: Props) {
     },
     select: { id: true, status: true },
   });
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { preferredLang: true, image: true, name: true },
+  });
 
   const serialized = entries.map((e) => ({
     ...e,
@@ -73,8 +77,9 @@ export default async function HomePage({ searchParams }: Props) {
       month={monthIdx + 1}
       user={{
         name: session.user.name ?? null,
-        image: session.user.image ?? null,
+        image: user?.image ?? null,
         email: session.user.email ?? null,
+        preferredLang: user?.preferredLang as 'en' | 'zh' | null ?? "en",
       }}
       todayEntry={todayEntry ? { id: todayEntry.id, status: todayEntry.status } : null}
     />

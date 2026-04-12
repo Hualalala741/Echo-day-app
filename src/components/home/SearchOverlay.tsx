@@ -79,7 +79,7 @@ export default function SearchOverlay() {
     value={query}
     onChange={(e) => handleChange(e.target.value)}
     onFocus={() => { if (query.trim()) setOpen(true); }}
-    placeholder="搜索日记..."
+    placeholder="Search diaries..."
     className="w-40 sm:w-56 text-sm text-slate-900 placeholder:text-slate-400 outline-none bg-transparent"
   />
   {query && (
@@ -110,12 +110,12 @@ export default function SearchOverlay() {
           {loading && (
             <div>
               <Loader2 className="w-4 h-4 animate-spin" />
-              正在搜索...
+              Searching...
             </div>
           )}
           {!loading && query.trim() && results.length === 0 && (
             <div>
-              <p>没有找到相关日记</p>
+              <p>No diaries found</p>
             </div>
           )}
           {!loading && query.trim() && results.length > 0 && (

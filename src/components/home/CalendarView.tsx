@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { EntryPreview } from "@/app/home/HomeClient";
+import { MOODS } from "@/lib/mood-map";
 
 interface Props {
   entries: EntryPreview[];
@@ -59,7 +60,7 @@ export default function CalendarView({ entries, year, month }: Props) {
               key={idx}
               onClick={() => entry && router.push(`/diary/${entry.id}`)}
               className={`
-                relative min-h-[90px] p-2 border-b border-r border-slate-50
+                relative min-h-[90px] max-h-[120px] p-2 border-b border-r border-slate-50
                 flex flex-col items-center
                 ${entry ? "cursor-pointer group" : ""}
                 ${!day ? "bg-slate-50/50" : ""}
@@ -70,7 +71,7 @@ export default function CalendarView({ entries, year, month }: Props) {
                   {/* Date number */}
                   <span
                     className={`
-                      w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium mb-1
+                      w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium
                       ${isToday
                         ? "bg-indigo-600 text-white"
                         : "text-slate-600"
@@ -82,13 +83,17 @@ export default function CalendarView({ entries, year, month }: Props) {
 
                   {/* Mood emoji */}
                   {entry?.moodEmoji && (
-                    <span className="text-2xl leading-none mt-0.5">{entry.moodEmoji}</span>
+                    <img
+                      src={MOODS[entry.moodEmoji].icon}
+                      alt={entry.moodEmoji}
+                      className="flex-1 max-h-[70%] min-h-0 w-auto object-contain"
+                    />
                   )}
 
                   {/* Hover preview card */}
                   {entry && (
                     <div className="
-                      absolute bottom-full left-1/2 -translate-x-1/2 z-30 w-52
+                      absolute bottom-full left-1/2 -translate-x-1/2 z-[102] w-52
                       bg-white rounded-xl shadow-xl border border-slate-100
                       opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100
                       transition-all duration-150 pointer-events-none overflow-hidden
@@ -106,7 +111,11 @@ export default function CalendarView({ entries, year, month }: Props) {
                       <div className="p-3">
                         <div className="flex items-center gap-1.5 mb-1">
                           {entry.moodEmoji && (
-                            <span className="text-base">{entry.moodEmoji}</span>
+                            <img
+                            src={MOODS[entry.moodEmoji].icon}
+                            alt={entry.moodEmoji}
+                            className="w-10 h-10"
+                          />
                           )}
                           {entry.emotionLabel && (
                             <span className="text-xs font-medium text-slate-600">

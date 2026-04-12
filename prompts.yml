@@ -2,13 +2,13 @@
 # Echo 所有 prompt 和模型配置集中管理
 
 supported_languages:
-  - zh-CN
+  - zh
   - en
 
 
 # 语言相关的变量
 language_settings:
-  zh-CN:
+  zh:
     conversation_language: "Respond in Simplified Chinese (简体中文)"
     diary_text_rule: |
       First-person diary entry in Simplified Chinese (简体中文), warm and personal tone.

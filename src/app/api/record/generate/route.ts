@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getMood } from "@/lib/mood-map";
 import { getDiaryConfig } from "@/lib/prompts";
 import { resolveTranscriptFromBody } from "@/lib/conversation-transcript";
-import type { AiLang } from "@/app/record/RecordWizard";
+
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     draftId: string;
     transcript?: string;
     conversationMessages?: unknown;
-    aiLang: AiLang;
+    aiLang: 'en' | 'zh';
   };
   const { draftId, aiLang } = body;
   const transcript = resolveTranscriptFromBody(body);
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       diaryText: parsed.diaryText,
       valence: parsed.valence,
       arousal: parsed.arousal,
-      moodEmoji: mood.emoji,
+      moodEmoji: mood.key,
       moodColorHex: mood.colorHex,
       emotionLabel: mood.label,
       moodEmojiSource: "AI",

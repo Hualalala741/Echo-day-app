@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { openai } from "@/lib/openai";
 import { getConversationConfig } from "@/lib/prompts";
-import type { AiLang } from "@/app/record/RecordWizard";
 import type OpenAI from "openai";
 
 interface Message {
@@ -22,7 +21,7 @@ export async function POST(req: NextRequest) {
     messages: Message[];
     photoUrl: string;
     isFirst: boolean;
-    aiLang: AiLang;
+    aiLang: 'en' | 'zh';
   };
 
   // 构建prompt

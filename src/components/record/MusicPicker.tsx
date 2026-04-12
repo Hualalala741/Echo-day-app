@@ -84,21 +84,21 @@ export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, 
     <div className="w-full rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center gap-2">
         <Music2 className="h-4 w-4 shrink-0 text-[#0f58bd]" />
-        <span className="text-xs font-semibold text-slate-500">今日歌曲</span>
+        <span className="text-xs font-semibold text-slate-500">Today&apos;s Song</span>
       </div>
 
       {!musicSearchQuery?.trim() ? (
-        <p className="text-sm text-slate-400">生成日记后会为你推荐配乐…</p>
+        <p className="text-sm text-slate-400">Music will be recommended after diary generation…</p>
       ) : loading ? (
         <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/90 p-4 text-sm text-slate-500">
           <Music2 className="h-4 w-4 animate-pulse text-[#0f58bd]" />
-          正在搜索歌曲…
+          Searching for songs…
         </div>
       ) : error ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
-            <span>搜索失败，请重试</span>
+            <span>Search failed, please retry</span>
           </div>
           <button
             type="button"
@@ -109,7 +109,7 @@ export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, 
             className="flex shrink-0 items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-red-700 transition-colors hover:bg-red-100 active:scale-[0.98]"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            <span className="font-medium">重新搜索</span>
+            <span className="font-medium">Retry</span>
           </button>
         </div>
       ) : track ? (
@@ -143,7 +143,7 @@ export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, 
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-40"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                换一批
+                More
               </button>
               <button
                 type="button"
@@ -152,7 +152,7 @@ export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, 
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
               >
                 <SkipBack className="h-3.5 w-3.5" />
-                上一首
+                Prev
               </button>
               <button
                 type="button"
@@ -161,7 +161,7 @@ export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, 
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
               >
                 <SkipForward className="h-3.5 w-3.5" />
-                下一首
+                Next
               </button>
             </div>
             <button
@@ -175,12 +175,12 @@ export default function MusicPicker({ musicSearchQuery, musicReason, onConfirm, 
               ) : (
                 <Check className="h-4 w-4 shrink-0" strokeWidth={2.5} />
               )}
-              {saving ? "保存中…" : "完成并保存"}
+              {saving ? "Saving…" : "Save"}
             </button>
           </div>
         </div>
       ) : (
-        <p className="text-sm text-slate-500">没有找到相关歌曲</p>
+        <p className="text-sm text-slate-500">No songs found</p>
       )}
     </div>
   );

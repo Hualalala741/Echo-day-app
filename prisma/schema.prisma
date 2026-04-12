@@ -61,6 +61,7 @@ model User {
   passwordHash  String?          // 如果是only-google登录的就是null
   name          String?
   image         String?             // required by NextAuth PrismaAdapter (Google avatar)
+  preferredLang String @default("en") // "en" | "zh"
   googleId      String?   @unique
   plan          Plan      @default(FREE)
   createdAt     DateTime  @default(now())
@@ -104,7 +105,7 @@ model DiaryEntry {
   spotifyArtist    String?
   spotifyPreviewUrl String?
   spotifyAlbumArt  String?
-  embedding        String?
+  embedding        Unsupported("vector(1536)")?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 

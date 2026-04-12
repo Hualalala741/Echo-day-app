@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect ,useCallback} from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Pencil, X, Check, Play, Pause, Music2, ChevronDown, Trash } from "lucide-react";
 import { MOODS } from "@/lib/mood-map";
+import Script from "next/script";
 
 interface Entry {
   id: string;
@@ -44,12 +45,73 @@ export default function DiaryClient({ entry, isNew }: Props) {
   const [dirty, setDirty] = useState(false);
 
     // Music player
+  const embedRef = useRef<any>(null);
+  const spotifyEmbedRef = useRef<HTMLDivElement|null>(null);
 
+  function initEmbed(IFrameAPI: any) {
+    console.log("initEmbed called", {
+      el: !!spotifyEmbedRef.current,
+      alreadyCreated: !!embedRef.current,
+      trackId: entry.spotifyTrackId,
+    });
+    if(!spotifyEmbedRef.current|| embedRef.current) return;
+    // 确保 DOM 节点还在文档里
+  if (!document.contains(spotifyEmbedRef.current)) return;
+  console.log("initEmbed creating controller");
+    IFrameAPI.createController(
+      spotifyEmbedRef.current,
+      {uri: `spotify:track:${entry.spotifyTrackId}`,height: 152},
+      (controller: any)=>{
+        console.log("controller created!", controller);
+        embedRef.current = controller;
+      }
+    )
+  }
+  // callback ref: Dom挂载时，如果API已经加载就立即创建
+  const spotifyRefCb = useCallback((el: HTMLDivElement|null) => {
+    console.log("spotifyRefCb", { el: !!el, apiCached: !!(window as any).__spotifyIFrameAPI });
+    // 卸载时清理
+  if (!el) {
+    embedRef.current?.destroy?.();
+    embedRef.current = null;
+    spotifyEmbedRef.current = null;
+    return;
+  }
+    
+    spotifyEmbedRef.current = el;
+    if (embedRef.current) return;// 已有 controller，不重复创建
+
+    const api = (window as any).__spotifyIFrameAPI;
+    if (api) {
+      initEmbed(api);
+    }
+    
+  },[entry.spotifyTrackId]);
+
+  function handleSpotifyScriptLoad() {
+    console.log("Script onLoad fired");
+
+  // 情况1: API 我们之前已缓存
+  if ((window as any).__spotifyIFrameAPI) {
+    console.log("API already cached, reusing");
+    initEmbed((window as any).__spotifyIFrameAPI);
+    return;
+  }
+
+  // 情况2: 首次加载，等回调
+  (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
+    console.log("onSpotifyIframeApiReady fired");
+    (window as any).__spotifyIFrameAPI = IFrameAPI;
+    initEmbed(IFrameAPI);
+  };
+  }
+  
 
 
 
   function handleEnterDay() {
     setShowMask(false);
+    embedRef.current?.togglePlay();
   }
 
   function handleBack() {
@@ -70,11 +132,11 @@ export default function DiaryClient({ entry, isNew }: Props) {
     setShowMoodPicker(false);
   }
   async function handleDelete(){
-    if(!confirm("确定要删除这个日记吗？")) return;
+    if(!confirm("Are you sure you want to delete this diary?")) return;
     try{
       const res = await fetch(`/api/diary/${entry.id}`,{method: "DELETE"})
       if(!res.ok){
-        let message = "删除失败";
+        let message = "Delete failed";
         const data = await res.json();
         if(data && typeof data.error === "string") message = data.error;
         throw new Error(message);
@@ -94,7 +156,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           diaryText: editText,
-          moodEmoji: editMood.emoji,
+          moodEmoji: editMood.label,
           emotionLabel: editMood.label,
           moodColorHex: editMood.colorHex,
         }),
@@ -118,7 +180,13 @@ export default function DiaryClient({ entry, isNew }: Props) {
   return (
     <div className="relative w-full min-h-screen overflow-hidden bg-black">
       {/* <audio ref={audioRef} onEnded={() => setIsPlaying(false)} className="hidden" /> */}
-
+      {entry.spotifyTrackId && (
+        <Script
+          src="https://open.spotify.com/embed/iframe-api/v1"
+          strategy="afterInteractive"
+          onLoad={handleSpotifyScriptLoad}
+        />
+      )}
       {/* Full-screen photo background */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -141,7 +209,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
             <p className="text-sm font-medium uppercase tracking-widest opacity-70 mb-2">
               {formatDate(entry.date)}
             </p>
-            <div className="text-7xl mb-2">{entry.moodEmoji}</div>
+            <img src={MOODS[entry.moodEmoji].icon} alt={entry.moodEmoji} className="w-60 h-60" />
             <p className="text-lg font-semibold opacity-90">{entry.emotionLabel}</p>
           </div>
           <button
@@ -216,7 +284,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
               onClick={() => editing && setShowMoodPicker((s) => !s)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 ${editing ? "cursor-pointer hover:bg-black/50" : "cursor-default"}`}
             >
-              <span className="text-xl">{editMood.emoji}</span>
+              <img src={MOODS[editMood.emoji].icon} alt={editMood.emoji} className="w-10 h-10" />
               <span className="text-white text-sm font-medium">{editMood.label}</span>
             </button>
             <span className="text-white/60 text-sm">{formatDate(entry.date)}</span>
@@ -229,7 +297,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
                 <button
                   key={m.label}
                   onClick={() => {
-                    setEditMood({ emoji: m.emoji, label: m.label, colorHex: m.colorHex });
+                    setEditMood({ emoji: m.label, label: m.label, colorHex: m.colorHex });
                     setDirty(true);
                     setShowMoodPicker(false);
                   }}
@@ -237,7 +305,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
                     editMood.label === m.label ? "bg-white/20" : "hover:bg-white/10"
                   }`}
                 >
-                  <span className="text-lg">{m.emoji}</span>
+                  <img src={m.icon} alt={m.label} className="w-10 h-10" />
                   {m.label}
                 </button>
               ))}
@@ -260,14 +328,20 @@ export default function DiaryClient({ entry, isNew }: Props) {
 
           {/* Music player */}
           {entry.spotifyTrackId && (
-            <div className="rounded-2xl overflow-hidden">
-              <iframe
+            <div  className="rounded-2xl overflow-hidden">
+              {/* <iframe
                 src={`https://open.spotify.com/embed/track/${entry.spotifyTrackId}?utm_source=generator&theme=0`}
                 width="100%"
                 height="152"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                 loading="lazy"
                 style={{ borderRadius: "16px", border: "none" }}
+              /> */}
+              <div 
+                ref={spotifyRefCb}
+                id="spotify-embed"
+                className="rounded-2xl overflow-hidden"
+                style={{minHeight: "152px"}}
               />
             </div>
           )}

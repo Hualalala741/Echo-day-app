@@ -3,7 +3,6 @@ import { useLocalRuntime, AssistantRuntimeProvider, type ChatModelAdapter, type 
 import {Thread} from "@/components/assistant-ui/thread";
 import { useState, useRef, useEffect } from "react";
 import { Draft } from "./RecordWizard";
-import { AiLang } from "./RecordWizard";
 import { ArrowLeft, CheckCircle, Languages, Mic, MicOff } from "lucide-react";
 import {
   Select,
@@ -13,6 +12,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
+type AiLang = 'en' | 'zh';
 
 interface Message {
   role: "user" | "assistant";
@@ -20,7 +20,7 @@ interface Message {
 }
 interface Props {
   draft: Draft;
-  aiLang: AiLang;
+  aiLang: 'en' | 'zh';
   onBack: ()=>void;
   onLangChange: (lang: AiLang) => void;
   onComplete: (messages: Message[] | null) => void;
@@ -272,26 +272,26 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
         onClick={()=>{onBack();releaseMedia();}}
         className='flex items-center gap-2 text-lg font-semibold text-slate-600 hover:text-[#0f58bd] transition-colors'>
           <ArrowLeft className="w-4 h-4" />
-          返回照片
+          Back to Photo
        </button>
       <div className="mb-8 mt-4">
         <h1 className="text-3xl mb-2 md:text-4xl font-black text-slate-900 mb-2">
-          第二步：AI语音对话
+          Step 2: AI Voice Chat
         </h1>
         <div className="flex">
         <p className="text-slate-500 text-lg">
-          告诉Echo关于这个时刻的故事。它正在倾听你的故事。
+          Tell Echo about this moment. It&apos;s listening to your story.
         </p>
         {/* 语言切换 */}
         <div className="flex items-center gap-2 ml-auto">
           <Languages className="w-4 h-4 text-slate-500"/>
-          <span className="text-xs text-slate-500">模型语言</span>
+          <span className="text-xs text-slate-500">Model Language</span>
           <Select value={aiLang} onValueChange={(value)=>onLangChange(value as AiLang)}>
             <SelectTrigger size="sm" className="w-[180px]">
-              <SelectValue>{aiLang === "zh-CN" ? "简体中文" : "English"}</SelectValue>
+              <SelectValue>{aiLang === "zh" ? "Chinese" : "English"}</SelectValue>
             </SelectTrigger>
             <SelectContent align='center' className="min-w-[9rem]">
-              <SelectItem value="zh-CN">简体中文</SelectItem>
+              <SelectItem value="zh">Chinese</SelectItem>
               <SelectItem value="en">English</SelectItem>
             </SelectContent>
           </Select>
@@ -312,7 +312,7 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
           </div>
         <div className="flex items-center gap-2 px-2 mt-2">
           <span className="text-slate-400 text-sm">📷</span>
-          <p className="text-sm text-slate-500 italic">今日照片</p>
+          <p className="text-sm text-slate-500 italic">Today&apos;s Photo</p>
         </div>
         </div>
 
@@ -355,7 +355,7 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
             style={{ backgroundColor: "#0f58bd", boxShadow: "0 4px 14px rgba(15,88,189,0.2)" }}
           >
             <CheckCircle className="w-5 h-5" />
-            完成对话
+            Finish
           </button>
         </div>
       </div>

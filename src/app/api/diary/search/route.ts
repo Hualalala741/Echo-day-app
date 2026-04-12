@@ -15,13 +15,13 @@ export async function GET(req: NextRequest) {
     const entries = await prisma.$queryRawUnsafe(`
       SELECT id, date, "diaryText", "photoUrl",
              "moodEmoji", "moodColorHex", "emotionLabel",
-             1 - (embedding <=> ${vectorLiteral}) as similarity
+             1 - (embedding::vector <=> ${vectorLiteral}) as similarity
       FROM "DiaryEntry"
       WHERE "userId" = $1
         AND status = 'COMPLETE'
         AND embedding IS NOT NULL
-        AND 1-(embedding <=> ${vectorLiteral})>= 0.4
-      ORDER BY embedding <=> ${vectorLiteral}
+        AND 1-(embedding::vector <=> ${vectorLiteral})>= 0.4
+      ORDER BY embedding::vector <=> ${vectorLiteral}
       LIMIT 20
     `, session.user.id);
       return NextResponse.json({entries: entries});

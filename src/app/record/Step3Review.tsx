@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Wand2, ArrowLeft, Edit } from "lucide-react";
-import type { Draft, GeneratedContent, AiLang, Message } from "./RecordWizard";
+import type { Draft, GeneratedContent, Message } from "./RecordWizard";
 import MusicPicker, { type SpotifyTrack } from "@/components/record/MusicPicker";
 import {
   AlertDialog,
@@ -17,7 +17,7 @@ import {
 
 interface Props {
   draft: Draft;
-  aiLang: AiLang;
+  aiLang: 'en' | 'zh';
   onBack: () => void | Promise<void>;
   onComplete: (entryId: string) => void;
   saveDraft: (data: {
@@ -142,7 +142,7 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
       setBackDialogOpen(false);
     } catch (e) {
       console.error(e);
-      alert(e instanceof Error ? e.message : "操作失败");
+      alert(e instanceof Error ? e.message : "Operation failed");
     } finally {
       setBackPending(false);
     }
@@ -188,19 +188,19 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
         className="flex items-center gap-2 text-lg font-semibold text-slate-600 hover:text-[#0f58bd] transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        返回对话
+        Back to Conversation
       </button>
 
       <AlertDialog open={backDialogOpen} onOpenChange={setBackDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>返回对话？</AlertDialogTitle>
+            <AlertDialogTitle>Go back?</AlertDialogTitle>
             <AlertDialogDescription>
-              返回后当前日记会作废，再次进入本步时会重新生成日记。
+              Going back will discard the current diary. It will be regenerated when you return to this step.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={backPending}>取消</AlertDialogCancel>
+            <AlertDialogCancel disabled={backPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               disabled={backPending}
               onClick={(e) => {
@@ -209,15 +209,15 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
               }}
               className="bg-[#0f58bd] hover:bg-[#0c4a9e]"
             >
-              {backPending ? "处理中…" : "确定返回"}
+              {backPending ? "Processing…" : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <div>
-        <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">第三步 · 日记与配乐</h1>
-        <p className="text-slate-500 text-lg">Echo 会生成日记，你可以编辑并确认今日歌曲后保存。</p>
+        <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">Step 3: Diary & Music</h1>
+        <p className="text-slate-500 text-lg">Echo will generate your diary. Edit it and confirm today&apos;s song before saving.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
@@ -232,20 +232,20 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
           {loading && (
             <div className="flex items-center gap-3 text-sm text-slate-500 bg-white rounded-xl p-4 border border-slate-200">
               <Wand2 className="w-4 h-4 animate-spin" style={{ color: "#0f58bd" }} />
-              正在生成你的日记…
+              Generating your diary…
             </div>
           )}
 
           <div className="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[320px] lg:min-h-[400px]">
             <div className="flex items-center px-4 py-3 border-b border-slate-100 shrink-0">
               <Edit className="w-4 h-4 text-[#0f58bd] mr-2" />
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">今日日记</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Today&apos;s Diary</span>
             </div>
             <textarea
               value={diaryText}
               onChange={(e) => setDiaryText(e.target.value)}
               className="flex-1 w-full p-4 text-sm text-slate-700 leading-relaxed resize-none outline-none min-h-[240px] lg:min-h-[300px]"
-              placeholder="你的日记将出现在这里…"
+              placeholder="Your diary will appear here…"
               disabled={loading}
             />
           </div>
@@ -261,7 +261,7 @@ export default function Step3Review({ draft, aiLang, onBack, onComplete, saveDra
                 }}
                 className="ml-2 underline text-[#0f58bd]"
               >
-                重新生成
+                Regenerate
               </button>
             </p>
           )}

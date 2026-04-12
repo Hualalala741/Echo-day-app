@@ -3,25 +3,29 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, X } from "lucide-react";
+import { ArrowUpIcon, Calendar as CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useHomeStore } from "@/store/useHomeStore";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import DiaryCard from "./DiaryCard";
+import { MOODS } from "@/lib/mood-map";
 
 
 export default function TimelineView() {
   const router = useRouter();
   // state
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);// 开始日期
+  const {startDate, setStartDate} = useHomeStore();// 开始日期
 
   // refs
   const sentinelRef = useRef<HTMLDivElement>(null);// 放在列表底部的"哨兵"元素，被观察到时触发加载
+  const filterRef = useRef<HTMLDivElement>(null);// 日期筛选器元素
+  const [filterVisible, setFilterVisible] = useState(true);
 
 
   const {
@@ -99,19 +103,64 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
   return ()=> observer.disconnect(); // 卸载时停止观察,防止内存泄露
   }, [hasNextPage, fetchNextPage])
 
+  // 监听filter还在不在窗口
+  useEffect(()=>{
+    const el = filterRef.current;
+    if(!el) return;
+    const observer = new IntersectionObserver(
+      ([entry])=>{
+        setFilterVisible(entry.isIntersecting)
+      },
+      { rootMargin: "-30px 0px 0px 0px" }
+    );
+    observer.observe(el);
+    return ()=> observer.disconnect();
+  },[])
+
+  // 回到顶部
+  const [showTop,setShowTop] = useState(false);
+  useEffect(()=>{
+    function onScroll(){
+      setShowTop(window.scrollY > 100*window.innerHeight/100); // 滚动到100%的高度时，显示回到顶部按钮
+    }
+    window.addEventListener("scroll",onScroll);
+    return ()=> window.removeEventListener("scroll",onScroll);
+  },[])
+
+  // 滚动监听
+  const [floatingDate,setFloatingDate] = useState<string|undefined>("");
+  useEffect(()=>{
+    function onScroll(){
+      const cards = document.querySelectorAll('[data-date]');
+      let current='';
+      for(const card of cards){
+        const rect = card.getBoundingClientRect();
+        if(rect.top>=0){
+          current = card.getAttribute('data-date') ?? '';
+          break;
+        }
+      }
+      if(current !== floatingDate){
+        setFloatingDate(current);
+      }
+    }
+    window.addEventListener('scroll',onScroll);
+    return ()=>window.removeEventListener('scroll',onScroll);
+  },[])
+
   // 渲染
   return (
     <div >
 
       {/* 日期筛选 */}
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-5" ref={filterRef}>
         <Popover>
           <PopoverTrigger 
           render={<Button variant="outline" className="flex items-center gap-2"/>}>
             <CalendarIcon className="size-4" />
-            {startDate ? format(startDate, "yyyy-MM-dd") : "选择日期"}
+            {startDate ? format(startDate, "yyyy-MM-dd") : "Select date"}
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto p-0">
+          <PopoverContent align="start" className="w-auto z-0 p-0">
             <Calendar
               mode="single"
               selected={startDate}
@@ -120,19 +169,28 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
               autoFocus
             />
           </PopoverContent>
-        </Popover>
+        </Popover>      
         {startDate && (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-9 w-9 text-slate-400 hover:text-slate-600"
-      onClick={() => setStartDate(undefined)}
-    >
-      <X className="h-4 w-4" />
-    </Button>
-  )}
-        
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 text-slate-400 hover:text-slate-600"
+            onClick={() => setStartDate(undefined)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
+      {/* 日期浮标 */}
+      {!filterVisible&&floatingDate && !isLoading && (
+        <div className="fixed top-[68px] left-6 md:left-10 lg:left-20 z-20">
+        <span className='inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-600 font-medium shadow-sm'>
+            <CalendarIcon className="size-4 text-slate-400" />
+            {floatingDate?.slice(0, 10)}
+          </span>
+        </div>
+      )}
+
 
 
       {/* 骨架屏 */}
@@ -154,7 +212,7 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
        {/* 空状态 */}
        {!isLoading && entries.length === 0 && (
         <div className="py-20 text-center text-sm text-slate-400">
-            无日记记录
+            No diary entries
         </div>
        )}
 
@@ -165,14 +223,18 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
 
       <div className="space-y-5">
         {entries.map((entry, idx) => (
-          <div key={entry.id} className="flex gap-4 items-start">
+          <div key={entry.id} className="flex gap-4 items-start" data-date={entry.date}>
             {/* Emoji circle */}
-            <div
+            {/* <div
               className="relative z-10 w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 text-xl border-2 shadow-sm"
               style={{ borderColor: idx === 0 ? (entry.moodColorHex ?? "#0f58bd") : "#e2e8f0" }}
-            >
-              {entry.moodEmoji ?? "📓"}
-            </div>
+            > */}
+              <img src={MOODS[entry.moodEmoji as keyof typeof MOODS].icon} alt={entry.moodEmoji} 
+              className={"w-15 h-15 shadow-sm rounded-full shadow-sm"} 
+              style={{ borderColor: MOODS[entry.moodEmoji as keyof typeof MOODS].colorHex ?? "#0f58bd" ,
+                borderWidth: "2px",
+              }} /> 
+            {/* </div> */}
             <div className="flex-1 min-w-0">
               <DiaryCard entry={entry} />
             </div>
@@ -183,9 +245,18 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
       {/* 到底了 */}
       {!hasNextPage && entries.length > 0 &&(
         <div className="py-4 text-center text-sm text-slate-400">
-          --- 就这么多啦～ ---
+          --- That&apos;s all ---
         </div>
       )}
+      {/* 回到顶部 */}
+      {showTop &&
+      <Button
+        onClick={()=>window.scrollTo({top:0, behavior:'smooth'})}
+        className="fixed bottom-10 right-10 rounded-full bg-white shadow-sm hover:bg-slate-50">
+          <ArrowUpIcon className="size-4 text-[#0f58bd]" />
+      </Button>
+      }
+      
 
       
     </div>

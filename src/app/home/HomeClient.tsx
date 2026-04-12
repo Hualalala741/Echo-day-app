@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Plus } from "lucide-react";
+import { Sparkles, Plus ,Globe, Camera} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import SearchOverlay from "@/components/home/SearchOverlay";
+import { Spinner } from "@/components/ui/spinner";
 
 export type EntryPreview = {
   id: string;
@@ -47,7 +48,7 @@ interface Props {
   entries: EntryPreview[];
   year: number;
   month: number;
-  user: { name: string | null; image: string | null; email: string | null };
+  user: { name: string | null; image: string | null; email: string | null; preferredLang: 'en' | 'zh' };
   todayEntry: { id: string; status: string } | null;
 }
 
@@ -63,8 +64,21 @@ const PRIMARY = "#0f58bd";
 
 export default function HomeClient({ entries, year, month, user, todayEntry }: Props) {
   const router = useRouter();
+  const [lang, setLang] = useState<'en' | 'zh'>(user.preferredLang);
   const {viewMode, setViewMode} = useHomeStore();
   const [showConfirm, setShowConfirm] = useState(false);
+
+
+  function handleLangChange(newLang: 'en' | 'zh'){
+    setLang(newLang);
+    fetch('/api/user/preferences', {
+      method: 'PATCH', 
+      body: JSON.stringify({preferredLang: newLang}),
+    }).catch(error => {
+      console.error(error);
+      alert((error as Error).message);
+    });
+  }
 
   function navigateMonth(delta: number) {
     let newMonth = month + delta;
@@ -89,7 +103,7 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
       try{
         const res = await fetch(`/api/diary/${todayEntry.id}`,{method:"DELETE"})
         if(!res.ok){
-          throw new Error(`删除失败：${res.status}`)
+          throw new Error(`Delete failed: ${res.status}`)
         }
       }catch(error){
         console.error(error);
@@ -100,20 +114,42 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
   }
 
   const newEntryLabel = !todayEntry
-    ? "新建日记"
+    ? "New Diary"
     : todayEntry.status === "DRAFT"
-    ? "继续编辑草稿"
-    : "重新上传";
+    ? "Continue Draft"
+    : "Start Over";
 
   const firstName = user.name?.split(" ")[0] ?? "there";
   const initials = user.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [avatarUrl,setAvatarUrl] = useState(user.image ?? null);
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>)=>{
+    setUploading(true)
+    const file = e.target.files?.[0];
+    if(!file)return;
+    const form = new FormData()
+    form.append('file', file);
+    try{
+      const res = await fetch('/api/user/avatar', {method:"POST",body:form})
+      if(!res.ok) throw new Error("Upload failed");
+      const {image} = await res.json(); // 公共url
+      setAvatarUrl(image);
+    }catch(err){
+      console.error(err);
+      alert((err as Error).message);
+    }finally{
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f6f7f8" }}>
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 md:px-10 lg:px-20">
+      <header className="sticky top-0 z-[100] bg-white border-b border-slate-200 px-6 md:px-10 lg:px-20">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <div className="flex items-center gap-3 shrink-0">
@@ -144,13 +180,12 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
               {/* Avatar */}
               <div className="relative cursor-pointer">
 
-
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     className="cursor-pointer rounded-full outline-none hover:opacity-80 hover:scale-105 transition-all"
                   >
                     <Avatar className="w-10 h-10 border-2" style={{ borderColor: PRIMARY }}>
-                      <AvatarImage src={user.image ?? undefined} />
+                      <AvatarImage src={avatarUrl ?? undefined} />
                       <AvatarFallback
                         className="text-sm font-semibold"
                         style={{ backgroundColor: "#dbeafe", color: PRIMARY }}
@@ -159,13 +194,51 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
                       </AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-45">
+                <DropdownMenuContent align="end" className="w-45 z-[200]">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel className="font-normal">
                       <p className="text-sm font-medium text-slate-900">{user.name ?? "User"}</p>
                       <p className="text-xs text-slate-500 truncate">{user.email}</p>
                     </DropdownMenuLabel>
+                    <DropdownMenuItem className="cursor-pointer">
+                      {uploading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Spinner className="w-4 h-4 mr-2"/>
+                        Uploading...
+                       </div>
+                      ):( 
+                        <div className="rounded-ful flex items-center justify-center group-hover:opacity-100 transition-opacity"
+                         onClick={(e)=>{e.stopPropagation();fileInputRef.current?.click()}}>
+                        <Camera className="w-4 h-4 mr-2" />
+                        Change Avatar
+                       </div>)
+                  }
+                    </DropdownMenuItem>
                   </DropdownMenuGroup>
+
+                  <DropdownMenuSeparator />
+
+                  <span className="text-sm font-medium text-slate-900 px-2">Model Language</span>
+                  <div
+                  className="mx-2 my-1.5 flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5"
+                  onClick={(e) => e.stopPropagation()}
+                  > 
+                  
+                  {(["en", "zh"] as const).map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => handleLangChange(l)}
+                      className={`flex-1 px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                        lang === l
+                          ? "bg-white text-slate-800 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      {l === "en" ? "English" : "中文"}
+                    </button>
+                  ))}
+                  </div>
+            
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuItem
@@ -178,12 +251,9 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
                 </DropdownMenu>
-
-
                 <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
               </div>
             </div>
-
           </div>
         </div>
       </header>
@@ -251,17 +321,26 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
       <AlertDialog open={showConfirm}>
         <AlertDialogContent>
         <AlertDialogHeader>
-        <AlertDialogTitle>提示</AlertDialogTitle>
+        <AlertDialogTitle>Notice</AlertDialogTitle>
         <AlertDialogDescription>
-        重新上传会直接删除今天已经写好的日记。确定要继续吗？
+        Starting over will delete today&apos;s existing diary. Are you sure you want to continue?
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel onClick={() => setShowConfirm(false)}>取消</AlertDialogCancel>
-        <AlertDialogAction onClick={handleReplace} className='bg-red-500 hover:bg-red-600'>确定</AlertDialogAction>
+        <AlertDialogCancel onClick={() => setShowConfirm(false)}>Cancel</AlertDialogCancel>
+        <AlertDialogAction onClick={handleReplace} className='bg-red-500 hover:bg-red-600'>Confirm</AlertDialogAction>
       </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 更换头像 */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className='hidden'
+        onChange={handleAvatarUpload}
+      />
       
     </div>
   );

@@ -136,23 +136,23 @@ const Composer: FC = () => {
   return (
     <ComposerPrimitive.Root className="aui-composer-root relative flex w-full gap-2">
       <ComposerPrimitive.Input
-        placeholder="输入消息…"
+        placeholder="Type a message…"
         className="aui-composer-input min-h-8 max-h-28 w-full resize-none bg-transparent text-sm outline-none placeholder:text-slate-400 border border-slate-200 rounded-lg p-2"
         rows={1}
         autoFocus
-        aria-label="消息输入"
+        aria-label="Message input"
       />
       <div className="flex items-center justify-center border border-slate-200 rounded-lg p-2 hover:bg-slate-50 transition-all active: scale-95">
       <AuiIf condition={(s) => !s.thread.isRunning}>
       <ComposerPrimitive.Send asChild>
           <TooltipIconButton
-            tooltip="发送"
+            tooltip="Send"
             side="bottom"
             type="button"
             variant="default"
             size="icon"
             className="aui-composer-send size-8 shrink-0 rounded-full"
-            aria-label="发送消息"
+            aria-label="Send message"
           >
             <ArrowUpIcon className="size-4" />
           </TooltipIconButton>
@@ -161,13 +161,13 @@ const Composer: FC = () => {
       <AuiIf condition={(s) => s.thread.isRunning}>
         <ComposerPrimitive.Cancel asChild>
           <TooltipIconButton
-            tooltip="停止"
+            tooltip="Stop"
             side="bottom"
             type="button"
             variant="default"
             size="icon"
             className="aui-composer-cancel size-8 shrink-0 rounded-full"
-            aria-label="停止生成"
+            aria-label="Stop generating"
           >
             <SquareIcon className="size-3 fill-current" />
           </TooltipIconButton>

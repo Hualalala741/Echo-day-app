@@ -30,7 +30,7 @@ export type GeneratedContent = {
   musicSearchQuery: string;
   musicReason: string;
 };
-export type AiLang = "zh-CN" | "en";
+
 
 function normalizeConversationMessages(raw: unknown): Message[] | null {
   if (raw == null) return null;
@@ -60,15 +60,17 @@ interface Props {
     musicSearchQuery: string | null;
     musicReason: string | null;
   } | null;
+  userImage: string | null;
+  userPreferredLang: 'en' | 'zh' | null;
 }
 
 const STEPS = ["Photo Upload", "AI Voice Conversation", "Review & Music"];
 
-export default function RecordWizard({ userId, existingDraft}: Props) {
+export default function RecordWizard({ userId, userImage, userPreferredLang, existingDraft}: Props) {
   const router = useRouter();
   const initialStep = Math.min(existingDraft?.currentStep ?? 0, 2);
   const [step, setStep] = useState(initialStep);
-  const [aiLang, setAiLang] = useState<AiLang>("zh-CN");
+  const [aiLang, setAiLang] = useState(userPreferredLang ?? 'en');
   const [draft, setDraft] = useState<Draft | null>(
     existingDraft
       ? {
@@ -229,7 +231,13 @@ export default function RecordWizard({ userId, existingDraft}: Props) {
             draft={draft}
             saveDraft={saveDraft}
             onBack={()=>setStep(0)}
-            onLangChange={(lang: AiLang)=>setAiLang(lang)}
+            onLangChange={(lang)=>{setAiLang(lang); fetch('/api/user/preferences', {
+              method: 'PATCH',
+              body: JSON.stringify({preferredLang: lang}),
+            }).catch(error => {
+              console.error(error);
+              alert((error as Error).message);
+            });}}
             onComplete={handleStep2Complete}
             initalMessages={draft.conversationMessages}
           />

@@ -1,0 +1,10 @@
+<svg width="280" height="280" viewBox="50 50 180 180" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(140 140)">
+  <path fill="#5DB9AE" d="M-61,-6 C-58,-37 -34,-58 -1,-62 C32,-66 58,-48 64,-18 C69,8 62,39 40,56 C17,72 -17,71 -42,58 C-61,48 -67,20 -61,-6Z"/>
+  <!-- 眼睛：圆润弯弯眼 -->
+  <path d="M-28,-1 Q-18,10 -8,-1" stroke="#111" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M8,-1 Q18,10 28,-1" stroke="#111" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <!-- 嘴巴：圆润微笑 -->
+  <path d="M-19,28 Q0,40 19,28" stroke="#111" stroke-width="5" stroke-linecap="round" fill="none"/>
+</g>
+</svg>

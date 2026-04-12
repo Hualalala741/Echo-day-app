@@ -38,6 +38,10 @@ export default async function RecordPage({
       musicReason: true,
     },
   });
+  const user = await prisma.user.findUnique({
+    where: {id: session.user.id},
+    select: {preferredLang: true, image: true, name:true},
+  });
 
   // If resuming a complete entry, redirect to diary
     if (draft?.status === "COMPLETE" && !resume&& !replacingComplete) {
@@ -47,6 +51,8 @@ export default async function RecordPage({
   return (
     <RecordWizard
       userId={session.user.id}
+      userImage={user?.image ?? null}
+      userPreferredLang={user?.preferredLang as 'en' | 'zh' | null}
       existingDraft={
         draft
           ? {

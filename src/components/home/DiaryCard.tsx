@@ -25,7 +25,8 @@ export default function DiaryCard({entry}: Props) {
   return (
     <div
     onClick={() => router.push(`/diary/${entry.id}`)}
-    className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 cursor-pointer hover:shadow-md transition-shadow duration-150 min-w-0"
+    className="rounded-2xl shadow-sm border border-slate-200 p-4 cursor-pointer hover:shadow-md transition-shadow duration-150 min-w-0"
+    style={{ backgroundColor:(entry.moodColorHex ?? "#ffffff")+"33", }}
   >
     {/* Title row */}
     <div className="flex items-baseline justify-between gap-2 mb-2">

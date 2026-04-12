@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       diaryText: body.diaryText,
       valence: body.valence,
       arousal: body.arousal,
-      moodEmoji: existing.moodEmoji ?? mood.emoji,
+      moodEmoji: existing.moodEmoji ?? mood.key,
       moodColorHex: existing.moodColorHex ?? mood.colorHex,
       emotionLabel: existing.emotionLabel ?? mood.label,
       moodEmojiSource: existing.moodEmojiSource ?? "AI",
