@@ -1,12 +1,17 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const nextConfig: NextConfig = {
   /* config options here */
   // reactStrictMode: false,
 };
 
-export default withSentryConfig(nextConfig, {
+const analyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+export default analyzer(withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
@@ -42,4 +47,4 @@ export default withSentryConfig(nextConfig, {
       removeDebugLogging: true,
     },
   }
-});
+}));

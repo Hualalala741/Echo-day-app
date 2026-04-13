@@ -234,9 +234,9 @@ const AssistantMessage: FC = () => {
       <div className="flex gap-1">
 {/* 头像 */}
       <div
-          className="w-8 h-8 rounded-full bg-brand/15 text-brand flex items-center justify-center shrink-0 text-sm font-bold mt-0.5"
+          className="w-8 h-8 rounded-full bg-brand/50 text-brand flex items-center justify-center shrink-0 text-sm font-bold mt-0.5"
         >
-          E
+          <img src="/chatAvatar.svg" alt="Echo" className='w-full h-full'/>
       </div>
       {/* 气泡 */}
       <div className="flex flex-col gap-1 min-w-0">
