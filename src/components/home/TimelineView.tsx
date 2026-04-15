@@ -51,7 +51,7 @@ export default function TimelineView() {
       return data
     },
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined, // 取出后端返回的nextCursor
   })
   // useInfiniteQuery 会自动处理分页，不需要我们手动处理
   //数据结构：data = {
@@ -121,7 +121,7 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
   const [showTop,setShowTop] = useState(false);
   useEffect(()=>{
     function onScroll(){
-      setShowTop(window.scrollY > 100*window.innerHeight/100); // 滚动到100%的高度时，显示回到顶部按钮
+      setShowTop(window.scrollY > window.innerHeight); // 滚动到窗口高度时，显示回到顶部按钮
     }
     window.addEventListener("scroll",onScroll);
     return ()=> window.removeEventListener("scroll",onScroll);
