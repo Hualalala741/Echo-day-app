@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import HomeClient from "./HomeClient";
 
@@ -7,6 +8,7 @@ interface Props {
   searchParams: Promise<{ month?: string }>;
 }
 
+// 优化：把page拆成两层，外层立刻返回welcome，内存suspense包裹数据查询
 export default async function HomePage({ searchParams }: Props) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");

@@ -25,7 +25,7 @@ export default function DiaryCard({entry}: Props) {
   return (
     <div
     onClick={() => router.push(`/diary/${entry.id}`)}
-    className="rounded-2xl shadow-sm border border-border p-4 cursor-pointer hover:shadow-md transition-shadow duration-150 min-w-0"
+    className="rounded-2xl border border-border/50 p-4 cursor-pointer min-w-0 card-hover-shadow"
     style={{ backgroundColor:(entry.moodColorHex ?? "#ffffff")+"33", }}
   >
     {/* Title row */}
@@ -47,11 +47,12 @@ export default function DiaryCard({entry}: Props) {
 
     {/* Photo */}
     {entry.photoUrl && (
-      <div className="rounded-xl overflow-hidden bg-muted">
+      <div className="rounded-xl overflow-hidden bg-muted aspect-[16/9]">
         <img
           src={entry.photoUrl}
-          alt=""
-          className="w-full object-cover max-h-52"
+          alt={`${entry.date} Diary photo`}
+          className="w-full h-full object-cover"
+          loading="lazy"
         />
       </div>
     )}

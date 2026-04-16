@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 10;
 
 // GET /api/diary/timeline
 export async function GET(req: NextRequest) {

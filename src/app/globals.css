@@ -142,3 +142,20 @@
     @apply font-sans;
   }
 }
+
+.card-hover-shadow{
+  position: relative;
+}
+.card-hover-shadow::after{
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+.card-hover-shadow:hover::after {
+  opacity: 1;
+}

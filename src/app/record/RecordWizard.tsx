@@ -3,11 +3,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { X, CheckCircle, Mic, Moon, Sun } from "lucide-react";
-import Step1Photo from "./Step1Photo";
-import Step3Review from "./Step3Review";
-import Step2Voice2 from "./Step2Voice2";
+import dynamic from "next/dynamic";
 import { useThemeStore } from "@/store/useThemeStore";
 
+const Step1Photo = dynamic(() => import("./Step1Photo"), {
+  loading: () => <StepSkeleton />,
+});
+const Step2Voice2 = dynamic(() => import("./Step2Voice2"), {
+  loading: () => <StepSkeleton />,
+});
+const Step3Review = dynamic(() => import("./Step3Review"), {
+  loading: () => <StepSkeleton />,
+});
 export interface Message {
   role: "user" | "assistant";
   content: string;
@@ -262,6 +269,15 @@ export default function RecordWizard({ userId, userImage, userPreferredLang, exi
           />
         )}
       </main>
+    </div>
+  );
+}
+function StepSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="h-8 w-1/3 bg-muted rounded" />
+      <div className="h-64 bg-muted rounded-xl" />
+      <div className="h-4 w-2/3 bg-muted rounded" />
     </div>
   );
 }

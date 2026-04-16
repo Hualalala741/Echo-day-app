@@ -97,7 +97,7 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
         fetchNextPage();
       }
     },
-    {rootMargin: "200px"} // 提前200px加载下一页
+    {rootMargin: "600px"} // 提前200px加载下一页
   );
   observer.observe(el); // 开始观察哨兵元素
   return ()=> observer.disconnect(); // 卸载时停止观察,防止内存泄露
