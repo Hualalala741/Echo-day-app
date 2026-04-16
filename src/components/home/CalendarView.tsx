@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EntryPreview } from "@/app/home/HomeClient";
+import { getCalendarHoverPhotoUrl } from "@/lib/preview-image-url";
 import { MOODS, type MoodKey } from "@/lib/mood-map";
 
 interface Props {
@@ -14,6 +16,8 @@ const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function CalendarView({ entries, year, month }: Props) {
   const router = useRouter();
+  /** 仅悬停某天时再加载该日大图，避免首屏拉取全部日记原图 */
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
 
   const today = new Date();
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month;
@@ -59,6 +63,10 @@ export default function CalendarView({ entries, year, month }: Props) {
             <div
               key={idx}
               onClick={() => entry && router.push(`/diary/${entry.id}`)}
+              onMouseEnter={() => {
+                if (day && entry) setHoveredDay(day);
+              }}
+              onMouseLeave={() => setHoveredDay(null)}
               className={`
                 relative min-h-[90px] max-h-[120px] p-2 border-b border-r border-border
                 flex flex-col items-center
@@ -92,20 +100,25 @@ export default function CalendarView({ entries, year, month }: Props) {
 
                   {/* Hover preview card */}
                   {entry && (
-                    <div className="
+                    <div
+                      className="
                       absolute bottom-full left-1/2 -translate-x-1/2 z-[102] w-52
                       bg-card rounded-xl shadow-xl border border-border
                       opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100
-                      transition-all duration-150 pointer-events-none overflow-hidden
-                    ">
-                      {/* Photo */}
-                      <div className="h-25 bg-muted overflow-hidden">
-                        <img
-                          src={entry.photoUrl}
-                          alt=""
-                          loading="lazy"
-                          className="w-full h-full object-cover"
-                        />
+                      transition-all duration-150 overflow-hidden
+                      pointer-events-none group-hover:pointer-events-auto
+                    "
+                    >
+                      {/* Photo：仅在悬停该格且 state 同步后才挂 src，避免首屏请求全部原图 */}
+                      <div className="h-25 bg-muted overflow-hidden flex items-center justify-center">
+                        {hoveredDay === day ? (
+                          <img
+                            src={getCalendarHoverPhotoUrl(entry.photoUrl)}
+                            alt=""
+                            decoding="async"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : null}
                       </div>
                       {/* Text */}
                       <div className="p-3">
