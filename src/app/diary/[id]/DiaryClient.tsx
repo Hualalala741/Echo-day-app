@@ -237,7 +237,7 @@ export default function DiaryClient({ entry, isNew }: Props) {
             onClick={handleEnterDay}
             className="mt-2 px-8 py-3 rounded-full bg-black/10 dark:bg-white/20 backdrop-blur-sm border border-black/15 dark:border-white/30 text-gray-800 dark:text-white font-bold text-sm hover:bg-black/20 dark:hover:bg-white/30 transition-all"
           >
-            Enter This Dayx
+            Enter This Day
           </button>
           <ChevronDown className="w-5 h-5 text-gray-500 dark:text-white/50 animate-bounce" />
         </div>
