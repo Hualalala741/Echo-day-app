@@ -78,7 +78,7 @@ export default function SearchOverlay() {
     onChange={(e) => handleChange(e.target.value)}
     onFocus={() => { if (query.trim()) setOpen(true); }}
     placeholder="Search diaries..."
-    className="w-40 sm:w-56 text-sm text-slate-900 placeholder:text-slate-400 outline-none bg-transparent"
+    className="w-full min-w-[80px] sm:w-56 text-sm text-slate-900 placeholder:text-slate-400 outline-none bg-transparent"
   />
   {query && (
     <button onClick={

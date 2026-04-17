@@ -131,7 +131,9 @@ export default function HomeContent({ entries, year, month, todayEntry }: Props)
         {viewMode === "calendar" ? (
           <CalendarView entries={entries} year={year} month={month} />
         ) : (
-          <TimelineView />
+          <div className="mx-auto w-full max-w-2xl">
+            <TimelineView />
+          </div>
         )}
       </main>
 

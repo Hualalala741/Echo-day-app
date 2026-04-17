@@ -155,7 +155,7 @@ export default function HomeClient({ entries, year, month, user, todayEntry }: P
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-[100] bg-card border-b border-border px-6 md:px-10 lg:px-20">
+      <header className="sticky w-fulltop-0 z-[100] bg-card border-b border-border px-6 md:px-10 lg:px-20">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <div className="flex items-center gap-3 shrink-0">
