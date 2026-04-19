@@ -91,7 +91,6 @@ export default function LoginPage() {
           <GoogleIcon />
           Continue with Google
         </button>
-
         {/* Divider */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
