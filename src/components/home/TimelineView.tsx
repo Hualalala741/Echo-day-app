@@ -50,7 +50,10 @@ export default function TimelineView() {
       const data = await res.json()
       return data
     },
+    staleTime: 1000 * 60 * 30, // 30分钟
+    gcTime: 1000 * 60 * 60, // 1小时
     initialPageParam: null as string | null,
+
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined, // 取出后端返回的nextCursor
   })
   // useInfiniteQuery 会自动处理分页，不需要我们手动处理
