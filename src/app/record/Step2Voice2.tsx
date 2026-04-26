@@ -129,13 +129,16 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();// 把字节转回字符串（跟后端的 encoder 对应）
       let fullText = "";
+      let buffer = "";
       while(true){
         // 读取一块数据
         // done: 是否读完了
         const {done, value} = await reader.read();
         if(done) break;
         const text = decoder.decode(value, {stream: true});
-        const lines = text.split("\n");
+        buffer += text;
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? ""; // 把最后一行保存到buffer(可能是没收完的)
         for(const line of lines){
           if(!line.startsWith("data: ")) continue;
           const data = line.slice(6).trim();//
@@ -149,7 +152,6 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
           }
         }
       }
-
       // 模型说话
       if(!isMutedRef.current&&fullText.trim()){
         const ttsRes = await fetch("/api/record/tts",{
@@ -157,6 +159,7 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({text: fullText}),
         });
+        // 可能在请求过程中点了静音，所以需要判断
         if(ttsRes.ok&&!isMutedRef.current){
           const blob = await ttsRes.blob();
           const url = URL.createObjectURL(blob);

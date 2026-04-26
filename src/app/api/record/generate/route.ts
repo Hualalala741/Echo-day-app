@@ -8,6 +8,30 @@ import { getDiaryConfig } from "@/lib/prompts";
 import { resolveTranscriptFromBody } from "@/lib/conversation-transcript";
 import { estimateDiaryLength } from "@/lib/diary-length";
 
+// 给 OpenAI response_format 用的 JSON Schema
+// strict: true 要求所有字段必填、object 必须 additionalProperties: false
+const DIARY_JSON_SCHEMA = {
+  name: "diary_entry",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "diaryText",
+      "valence",
+      "arousal",
+      "musicSearchQuery",
+      "musicReason",
+    ],
+    properties: {
+      diaryText: { type: "string" },
+      valence: { type: "number" },
+      arousal: { type: "number" },
+      musicSearchQuery: { type: "string" },
+      musicReason: { type: "string" },
+    },
+  },
+} as const;
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -55,7 +79,7 @@ export async function POST(req: NextRequest) {
       { role: "system", content: diaryConfig.system_prompt },
       { role: "user", content: userContent },
     ],
-    response_format: { type: "json_object" },
+    response_format: { type: "json_schema", json_schema: DIARY_JSON_SCHEMA },
     max_tokens: 600,
   });
 

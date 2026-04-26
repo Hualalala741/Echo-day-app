@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
   const { text } = await req.json() as { text: string };
   if (!text) return NextResponse.json({ error: "No text" }, { status: 400 });
 
+
   const response = await openai.audio.speech.create({
     model: "gpt-4o-mini-tts",
     voice: "nova",
@@ -16,6 +17,7 @@ export async function POST(req: NextRequest) {
     response_format: "mp3",
   });
 
+  //原始字节
   const buffer = Buffer.from(await response.arrayBuffer());
   return new NextResponse(buffer, {
     headers: {

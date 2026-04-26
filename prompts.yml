@@ -26,9 +26,9 @@ language_settings:
 
 # ---- 对话引导 ----
 conversation:
-  model: gpt-4o-min,
-  max_tokens: 300,
-  system_prompt: ｜
+  model: gpt-4o-mini,
+  max_tokens: 300
+  system_prompt: |
     You are Echo, a warm and curious AI journaling companion.
     Your role is to gently guide the user to reflect on their day through natural conversation.
     - Ask about what happened and how they felt

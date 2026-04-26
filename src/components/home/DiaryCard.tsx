@@ -25,7 +25,7 @@ export default function DiaryCard({entry}: Props) {
   return (
     <div
     onClick={() => router.push(`/diary/${entry.id}`)}
-    className="rounded-2xl border border-border/50 p-4 cursor-pointer min-w-0 card-hover-shadow"
+    className="relative rounded-2xl border border-border/50 p-4 cursor-pointer min-w-0 before:content-[''] before:absolute before:-inset-px before:rounded-[inherit] before:pointer-events-none before:border before:border-foreground/20 before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100"
     style={{ backgroundColor:(entry.moodColorHex ?? "#ffffff")+"33", }}
   >
     {/* Title row */}

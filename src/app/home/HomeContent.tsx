@@ -3,15 +3,30 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import dynamic from "next/dynamic";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import CalendarView from "@/components/home/CalendarView";
-import TimelineView from "@/components/home/TimelineView";
+// import TimelineView from "@/components/home/TimelineView";
 import { useHomeStore } from "@/store/useHomeStore";
 import { Spinner } from "@/components/ui/spinner";
+
+// 抽成顶层函数，给 next/dynamic 和"hover 预热"共用。
+// webpack 对同一个 chunk 的 import() 会自动去重（命中模块缓存），多次调用零成本。
+const loadTimelineView = () => import("@/components/home/TimelineView");
+
+const TimelineView = dynamic(loadTimelineView, {
+  ssr: false,
+  loading: () => (
+    <div className="py-20 text-center text-sm text-muted-foreground">
+      Loading timeline...
+    </div>
+  ),
+});
+
 
 export type EntryPreview = {
   id: string;
@@ -91,20 +106,32 @@ export default function HomeContent({ entries, year, month, todayEntry }: Props)
       {/* 左：New Entry（原统计文案位置，与 Welcome 同列对齐）；右：视图切换 */}
       <div className="px-6 md:px-10 lg:px-20 pt-1 pb-3 mb-3 flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center bg-card rounded-xl p-1 gap-1 shrink-0">
-          {(["calendar", "timeline"] as View[]).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setViewMode(v)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-all ${
-                viewMode === v
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {v === "calendar" ? "Calendar" : "Timeline"}
-            </button>
-          ))}
+          {(["calendar", "timeline"] as View[]).map((v) => {
+            // 仅 Timeline 需要预热（Calendar 是默认视图，已在主 bundle 里）
+            const prefetchHandlers =
+              v === "timeline"
+                ? {
+                    onMouseEnter: loadTimelineView,
+                    onFocus: loadTimelineView,
+                    onTouchStart: loadTimelineView,
+                  }
+                : undefined;
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setViewMode(v)}
+                {...prefetchHandlers}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-all ${
+                  viewMode === v
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {v === "calendar" ? "Calendar" : "Timeline"}
+              </button>
+            );
+          })}
         </div>
         <button
           type="button"
