@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EntryPreview } from "@/app/home/HomeClient";
 import { getCalendarHoverPhotoUrl } from "@/lib/preview-image-url";
@@ -18,8 +18,17 @@ export default function CalendarView({ entries, year, month }: Props) {
   const router = useRouter();
   /** 仅悬停某天时再加载该日大图，避免首屏拉取全部日记原图 */
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
+  const [today,setToday] = useState<Date|null>(null);
+  console.log('[CalendarView] new Date():', new Date().toString())
+  console.log('[CalendarView] 运行环境:', typeof window === 'undefined' ? 'SERVER' : 'CLIENT')
+console.log('[CalendarView] TZ env:', typeof window === 'undefined' ? process.env.TZ : 'N/A')
 
-  const today = new Date();
+  useEffect(()=>{
+    setToday(new Date());
+  },[]);
+
+  if(!today) return null;
+
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month;
   const todayDate = today.getDate();
 
