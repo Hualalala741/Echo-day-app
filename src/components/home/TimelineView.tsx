@@ -144,7 +144,7 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
         }
       }
       if(current !== floatingDate){
-        setFloatingDate(current);
+        setFloatingDate(prev => prev !== current ? current : prev);
       }
     }
     window.addEventListener('scroll',onScroll);

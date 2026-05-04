@@ -1,31 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import dynamic from "next/dynamic";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import CalendarView from "@/components/home/CalendarView";
-// import TimelineView from "@/components/home/TimelineView";
 import { useHomeStore } from "@/store/useHomeStore";
 import { Spinner } from "@/components/ui/spinner";
 
-// 抽成顶层函数，给 next/dynamic 和"hover 预热"共用。
-// webpack 对同一个 chunk 的 import() 会自动去重（命中模块缓存），多次调用零成本。
-const loadTimelineView = () => import("@/components/home/TimelineView");
+// 模块级缓存：进程内只下载/执行一次，组件多次挂载也复用。
+// 用一个普通变量保存「已加载完毕的模块」，绕过 React.lazy 的"必须先 throw 一次 promise"限制。
+type TimelineViewMod = typeof import("@/components/home/TimelineView");
+let timelineModule: TimelineViewMod | null = null;
+let timelinePromise: Promise<TimelineViewMod> | null = null;
 
-const TimelineView = dynamic(loadTimelineView, {
-  ssr: false,
-  loading: () => (
-    <div className="py-20 text-center text-sm text-muted-foreground">
-      Loading timeline...
-    </div>
-  ),
-});
+function preloadTimelineView(): Promise<TimelineViewMod> {
+  if (timelineModule) return Promise.resolve(timelineModule);
+  if (!timelinePromise) {
+    timelinePromise = import("@/components/home/TimelineView").then((mod) => {
+      timelineModule = mod;
+      return mod;
+    });
+  }
+  return timelinePromise;
+}
 
 
 export type EntryPreview = {
@@ -59,6 +61,15 @@ export default function HomeContent({ entries, year, month, todayEntry }: Props)
   const { viewMode, setViewMode } = useHomeStore();
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // 用模块级缓存初始化：如果已经预加载过（hover/上次访问），首次渲染就同步拿到组件，零闪烁。
+  const [TimelineComp, setTimelineComp] = useState<ComponentType | null>(
+    () => timelineModule?.default ?? null
+  );
+
+  function loadTimelineView() {
+    if (TimelineComp) return; // 已经加载过了
+    preloadTimelineView().then((mod) => setTimelineComp(() => mod.default));
+  }
 
   function navigateMonth(delta: number) {
     let newMonth = month + delta;
@@ -116,11 +127,15 @@ export default function HomeContent({ entries, year, month, todayEntry }: Props)
                     onTouchStart: loadTimelineView,
                   }
                 : undefined;
+            const handleClick = () => {
+              if (v === "timeline") loadTimelineView(); // 兜底：键盘党直接 click 也能触发
+              setViewMode(v);
+            };
             return (
               <button
                 key={v}
                 type="button"
-                onClick={() => setViewMode(v)}
+                onClick={handleClick}
                 {...prefetchHandlers}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-all ${
                   viewMode === v
@@ -159,7 +174,7 @@ export default function HomeContent({ entries, year, month, todayEntry }: Props)
           <CalendarView entries={entries} year={year} month={month} />
         ) : (
           <div className="mx-auto w-full max-w-2xl">
-            <TimelineView />
+            {TimelineComp ? <TimelineComp /> : null}
           </div>
         )}
       </main>
