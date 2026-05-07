@@ -22,11 +22,19 @@ export default function Step1Photo({ existingPhotoUrl, existingDraftId, onComple
   const inputRef = useRef<HTMLInputElement>(null);
 
   const needsUpload = file !== null;
+  const MAX_BYTES = 4 * 1024 * 1024; // 4MB，按你需求改
+  function tooLarge(file: File) {
+    return file.size > MAX_BYTES;
+  }
 
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if(!f) return;
+    if(tooLarge(f)) {
+      setError("File too large. Maximum size is 4MB.");
+      return;
+    }
     if(preview&&!existingPhotoUrl) { URL.revokeObjectURL(preview); }
     setFile(f);
     setPreview(URL.createObjectURL(f));

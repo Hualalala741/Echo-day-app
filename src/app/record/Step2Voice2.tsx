@@ -94,63 +94,71 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
     })
   }
 
+  // 思考状态
+  const [thinkingLabel, setThinkingLabel] = useState<string | null>(null);
+  const setThinkingRef = useRef(setThinkingLabel);
+  setThinkingRef.current = setThinkingLabel;
+
   // 适配器
   const adapter: ChatModelAdapter = {
     // 当用户发消息时（需要ai信息的时候），调用这个方法
     // 加了 * 号变成 async generator，这样就能用 yield 逐步返回数据
     async *run({messages, abortSignal}){
-      // 把messages转换为给模型的apiMessages
-      const apiMessages = messages.map((m)=>({
-        role: m.role,
+      // 把历史消息转换为 ConversationTurn[]（不含当前这条用户消息）
+      const conversationHistory = messages.slice(0, -1).map((m) => ({
+        role: m.role === "user" ? "user" as const : "ai" as const,
         content: m.content
-        .filter((c)=>c.type === "text")
-        .map((c)=>c.text) //提取文本
-        .join("") // 如何拼接
+          .filter((c) => c.type === "text")
+          .map((c) => (c as {type: "text"; text: string}).text)
+          .join(""),
       }));
+      const lastMsg = messages[messages.length - 1];
+      const userMessage = lastMsg.content
+        .filter((c) => c.type === "text")
+        .map((c) => (c as {type: "text"; text: string}).text)
+        .join("");
 
-      // 调用api/record/chat接口
-      const res = await fetch("/api/record/chat", {
+      // 调用 chat graph 接口
+      const res = await fetch("/api/chat/respond", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          messages: apiMessages,
-          photoUrl: draft.photoUrl,
-          isFirst: apiMessages.filter((m) => m.role === "assistant").length === 0,
-          aiLang,
-        }),
+        body: JSON.stringify({ userMessage, conversationHistory }),
         signal: abortSignal,
       });
       if(!res.ok) throw new Error("Chat failed");
 
-
       // ---读取流---
-      // res.body 是 ReadableStream，需要用 ReadableStreamReader 读取
-      // 用reader一块一块读取数据，每次读取一块数据就yield出去
       const reader = res.body!.getReader();
-      const decoder = new TextDecoder();// 把字节转回字符串（跟后端的 encoder 对应）
+      const decoder = new TextDecoder();
       let fullText = "";
       let buffer = "";
-      while(true){
-        // 读取一块数据
-        // done: 是否读完了
-        const {done, value} = await reader.read();
-        if(done) break;
-        const text = decoder.decode(value, {stream: true});
-        buffer += text;
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? ""; // 把最后一行保存到buffer(可能是没收完的)
-        for(const line of lines){
-          if(!line.startsWith("data: ")) continue;
-          const data = line.slice(6).trim();//
-          if(data === "[DONE]") break;
-          try{
-            const chunk = JSON.parse(data);
-            fullText += chunk.chunk;
-            yield {content: [{type: "text", text: fullText}]};
-          } catch(e){
-            console.error(e);
+      try {
+        while(true){
+          const {done, value} = await reader.read();
+          if(done) break;
+          buffer += decoder.decode(value, {stream: true});
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for(const line of lines){
+            if(!line.startsWith("data: ")) continue;
+            const data = line.slice(6).trim();
+            if(data === "[DONE]") break;
+            try{
+              const event = JSON.parse(data) as {type: string; label?: string; chunk?: string};
+              if(event.type === "status") {
+                setThinkingRef.current(event.label ?? null);
+              } else if(event.type === "text" && event.chunk) {
+                setThinkingRef.current(null);
+                fullText += event.chunk;
+                yield {content: [{type: "text", text: fullText}]};
+              }
+            } catch(e){
+              console.error(e);
+            }
           }
         }
+      } finally {
+        setThinkingRef.current(null);
       }
       // 模型说话
       if(!isMutedRef.current&&fullText.trim()){
@@ -168,11 +176,12 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
           audioRef.current?.play();
         }
       }
-      // 保存对话
+      // 保存对话（wizard 侧记录用）
       const allMessages = [
-        ...apiMessages,
-        {role: "assistant", content: fullText},
-      ]
+        ...conversationHistory.map((m) => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content })),
+        { role: "user", content: userMessage },
+        { role: "assistant", content: fullText },
+      ];
       saveDraft({
         draftId: draft.id,
         currentStep: 1,
@@ -322,10 +331,17 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
       {/* 右：语音界面 */}
       <div className="flex flex-col gap-6">
         {/* 语音对话界面 */}
-        <div className="h-[400px] bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="relative h-[400px] bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <AssistantRuntimeProvider runtime={runtime}>
             <Thread />
           </AssistantRuntimeProvider>
+          {/* 思考过程提示 */}
+          {thinkingLabel && (
+            <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+              {thinkingLabel}
+            </div>
+          )}
         </div>
         {/* 录音button */}
         <div className="flex items-center justify-center gap-2">
