@@ -82,6 +82,9 @@ export default function DiaryClient({ entry, isNew }: Props) {
     if(!spotifyEmbedRef.current|| embedRef.current) return;
     if (!document.contains(spotifyEmbedRef.current)) return;
 
+    //Spotify 内部在这个 div 里创建/挂载嵌入
+    //所以在 Elements 里会看到这个 div 
+    // 下面突然有了子节点——那不是 React 写的 children，是第三方脚本改的真实 DOM。
     IFrameAPI.createController(
       spotifyEmbedRef.current,
       {uri: `spotify:track:${entry.spotifyTrackId}`,height: 152},
