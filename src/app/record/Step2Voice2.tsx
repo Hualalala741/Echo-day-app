@@ -337,15 +337,10 @@ export default function Step2Voice2({ draft, aiLang, saveDraft,initalMessages, o
         {/* 语音对话界面 */}
         <div className="relative h-[400px] bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <AssistantRuntimeProvider runtime={runtime}>
-            <Thread />
+            <AssistantThinkingProvider value={thinkingLabel}>
+              <Thread />
+            </AssistantThinkingProvider>
           </AssistantRuntimeProvider>
-          {/* 思考过程提示 */}
-          {thinkingLabel && (
-            <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
-              {thinkingLabel}
-            </div>
-          )}
         </div>
         {/* 录音button */}
         <div className="flex items-center justify-center gap-2">
