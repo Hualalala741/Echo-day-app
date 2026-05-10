@@ -130,25 +130,33 @@ const entries = data?.pages.flatMap((page)=>page.entries)??[];
     return ()=> window.removeEventListener("scroll",onScroll);
   },[])
 
-  // 滚动监听
+  // 滚动监听（rAF：每帧最多算一次 DOM，等价于节流且与重绘对齐）
   const [floatingDate,setFloatingDate] = useState<string|undefined>("");
   useEffect(()=>{
-    function onScroll(){
+    let rafId = 0;
+    function compute(){
+      rafId = 0;
       const cards = document.querySelectorAll('[data-date]');
-      let current='';
-      for(const card of cards){
+      let current = '';
+      for (const card of cards) {
         const rect = card.getBoundingClientRect();
-        if(rect.top>=0){
+        if (rect.top >= 0) {
           current = card.getAttribute('data-date') ?? '';
           break;
         }
       }
-      if(current !== floatingDate){
-        setFloatingDate(prev => prev !== current ? current : prev);
-      }
+      setFloatingDate((prev) => (prev !== current ? current : prev));
     }
-    window.addEventListener('scroll',onScroll);
-    return ()=>window.removeEventListener('scroll',onScroll);
+    function onScroll(){
+      if (rafId !== 0) return;
+      rafId = window.requestAnimationFrame(compute);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    compute();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId !== 0) cancelAnimationFrame(rafId);
+    };
   },[])
 
   // 渲染
