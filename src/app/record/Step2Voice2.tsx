@@ -1,6 +1,7 @@
 "use client";
 import { useLocalRuntime, AssistantRuntimeProvider, type ChatModelAdapter, type ThreadMessageLike } from "@assistant-ui/react";
-import {Thread} from "@/components/assistant-ui/thread";
+import { AssistantThinkingProvider } from "@/components/assistant-ui/assistant-thinking-context";
+import { Thread } from "@/components/assistant-ui/thread";
 import { useState, useRef, useEffect } from "react";
 import { Draft } from "./RecordWizard";
 import { ArrowLeft, CheckCircle, Languages, Mic, MicOff, Volume2 } from "lucide-react";
