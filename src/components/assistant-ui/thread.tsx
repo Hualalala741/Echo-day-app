@@ -17,6 +17,7 @@ import {
   ComposerPrimitive,
   ErrorPrimitive,
   MessagePrimitive,
+  MessagePartPrimitive,
   SuggestionPrimitive,
   ThreadPrimitive,
   useAuiState,
@@ -33,6 +34,7 @@ import {
   PencilIcon,
   RefreshCwIcon,
   SquareIcon,
+  Loader2Icon,
 } from "lucide-react";
 import type { FC } from "react";
 
@@ -228,14 +230,14 @@ const MessageError: FC = () => {
 
 const AssistantMessage: FC = () => {
   const thinkingLabel = useAssistantThinkingOptional();
-  const showThinkingInBubble = useAuiState(
+  const isStreamingAssistantTail = useAuiState(
     (s) =>
       s.thread.isRunning &&
       s.message.role === "assistant" &&
-      s.message.index === s.thread.messages.length - 1 &&
-      thinkingLabel != null &&
-      thinkingLabel !== "",
+      s.message.index === s.thread.messages.length - 1,
   );
+  const showThinkingInBubble =
+    isStreamingAssistantTail && !!thinkingLabel;
 
   return (
     <MessagePrimitive.Root
@@ -251,17 +253,25 @@ const AssistantMessage: FC = () => {
       </div>
       {/* 气泡 */}
       <div className="flex flex-col gap-1 min-w-0">
-          <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-3 text-sm text-foreground leading-relaxed wrap-break-word flex flex-col gap-2">
-            {showThinkingInBubble ? (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current shrink-0" />
-                {thinkingLabel}
-              </div>
-            ) : null}
-            <MessagePrimitive.Parts />
-          </div>
-          {/* <AssistantActionBar /> */}
-        </div>
+  <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-3 text-sm text-foreground leading-relaxed wrap-break-word">
+    <MessagePrimitive.Parts
+      components={{
+        Text: () => (
+          <p style={{ whiteSpace: "pre-line" }}>
+            <MessagePartPrimitive.Text />
+            <MessagePartPrimitive.InProgress>
+              <span className="ml-1 text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2Icon className="size-3 animate-spin inline-block shrink-0" /> 
+                { thinkingLabel? thinkingLabel: "Thinking..."}
+              </span>
+            </MessagePartPrimitive.InProgress>
+          </p>
+        ),
+      }}
+    />
+  </div>
+  {/* <AssistantActionBar /> */}
+</div>
 
       
       {/* <div className="aui-assistant-message-content wrap-break-word px-2 text-foreground leading-relaxed">
