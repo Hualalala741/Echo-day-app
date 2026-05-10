@@ -227,6 +227,16 @@ const MessageError: FC = () => {
 };
 
 const AssistantMessage: FC = () => {
+  const thinkingLabel = useAssistantThinkingOptional();
+  const showThinkingInBubble = useAuiState(
+    (s) =>
+      s.thread.isRunning &&
+      s.message.role === "assistant" &&
+      s.message.index === s.thread.messages.length - 1 &&
+      thinkingLabel != null &&
+      thinkingLabel !== "",
+  );
+
   return (
     <MessagePrimitive.Root
       className="aui-assistant-message-root fade-in slide-in-from-bottom-1 relative mx-auto w-full max-w-(--thread-max-width) animate-in py-3 duration-150"
@@ -241,7 +251,13 @@ const AssistantMessage: FC = () => {
       </div>
       {/* 气泡 */}
       <div className="flex flex-col gap-1 min-w-0">
-          <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-3 text-sm text-foreground leading-relaxed wrap-break-word">
+          <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-3 text-sm text-foreground leading-relaxed wrap-break-word flex flex-col gap-2">
+            {showThinkingInBubble ? (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current shrink-0" />
+                {thinkingLabel}
+              </div>
+            ) : null}
             <MessagePrimitive.Parts />
           </div>
           {/* <AssistantActionBar /> */}
